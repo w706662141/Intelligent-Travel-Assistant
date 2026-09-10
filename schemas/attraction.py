@@ -1,0 +1,20 @@
+from typing import Optional
+
+from pydantic import BaseModel, Field
+
+from schemas.location import Location
+
+
+class Attraction(BaseModel):
+    """景点信息"""
+    id: Optional[str] = Field(default=None, description="POI ID", )
+    name: str = Field(..., description='景点名称')
+    address: str = Field(..., description='地址')
+    location: Location = Field(..., description='经纬度坐标')
+    recommended_duration: int = Field(default=120, description='建议游览时间(分钟)', gt=0)
+    description: str = Field(..., description='景点描述')
+    category: Optional[str] = Field(default='景点', description='景点类别')
+    rating: Optional[float] = Field(default=None, ge=0, le=5, description='评分')
+    image_url: Optional[str] = Field(default=None, description='图片URL')
+    ticket_price: int = Field(default=0, ge=0, description='门票价格(元)')
+    opening_hours: Optional[str] = Field(default=None, description="开放时间", )
