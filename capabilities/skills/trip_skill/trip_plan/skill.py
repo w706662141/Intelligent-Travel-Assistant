@@ -80,7 +80,6 @@ class TripPlanSkill:
                 result.get("validation_errors")
             )
 
-
         except Exception as exc:
 
             print("\n" + "=" * 100)
