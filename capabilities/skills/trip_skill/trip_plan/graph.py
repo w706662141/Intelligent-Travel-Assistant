@@ -196,11 +196,11 @@ class TripPlanGraph:
 
         graph.add_edge(
             'route',
-            'builder'
+            'build'
         )
 
         graph.add_edge(
-            "builder",
+            "build",
             "validation",
         )
 

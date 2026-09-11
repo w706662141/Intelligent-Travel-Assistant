@@ -22,4 +22,4 @@ class PlanSelection(BaseModel):
         default_factory=list
     )
 
-    overall_suggestion: str = ''
+    overall_suggestions: str = ''

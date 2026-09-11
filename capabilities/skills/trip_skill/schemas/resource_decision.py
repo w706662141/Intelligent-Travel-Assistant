@@ -12,7 +12,7 @@ class ResourceRequest(BaseModel):
         "route",
     ]
 
-    reason = str = Field(
+    reason : str = Field(
         default='',
         description="为什么需要该资源"
     )

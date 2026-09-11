@@ -1,4 +1,3 @@
-# agent/skills/trip_plan/request.py
 
 from pydantic import BaseModel, Field
 

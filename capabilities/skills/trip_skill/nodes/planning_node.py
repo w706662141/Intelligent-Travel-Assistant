@@ -32,12 +32,10 @@
 #                 'status': 'failed',
 #                 'error': str(e)
 #             }
-from langchain_core.messages import SystemMessage, HumanMessage
 
 from capabilities.skills.trip_skill.prompts.trip_planning_prompt import TRIP_PLANNING_PROMPT
 from capabilities.skills.trip_skill.schemas.plan_selection import PlanSelection
 from capabilities.skills.trip_skill.trip_plan.state import TripPlanState
-from schemas.trip_plan import TripPlan
 
 
 class TripPlanningNode:
@@ -96,8 +94,8 @@ class TripPlanningNode:
             )
 
             return {
-                "trip_plan": selection,
-                "status": "completed",
+                "plan_selection": selection,
+                "status": "planned",
                 "error": None,
             }
         except Exception as e:
