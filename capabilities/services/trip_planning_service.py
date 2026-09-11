@@ -29,7 +29,7 @@ class TripPlanningService:
 
         days = (
                        end - start
-               ).days - 1
+               ).days + 1
         # =========================
         # 1. 景点
         # =========================

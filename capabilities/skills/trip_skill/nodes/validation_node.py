@@ -14,28 +14,14 @@ class TripPlanValidationNode:
         errors: list[str] = []
 
         if trip_plan is None:
-
-            errors.append("旅行计划生成失败")
+            errors.append("旅行计划不存在")
 
             return {
                 "validation_errors": errors,
-                "status": "invalid",
+                "status": "validation_failed",
             }
 
-        if not trip_plan.days:
-            errors.append("旅行计划没有每日行程")
-
-        if not trip_plan.city:
-            errors.append("旅行城市不能为空")
-
-        if not trip_plan.start_date:
-            errors.append("开始日期不能为空")
-
-        if not trip_plan.end_date:
-            errors.append("结束日期不能为空")
-
         if trip_plan.city != request.city:
-
             errors.append(
                 "旅行计划城市与用户请求不一致"
             )
@@ -45,31 +31,68 @@ class TripPlanValidationNode:
         # =========================
 
         if trip_plan.start_date != request.start_date:
-
             errors.append(
                 "开始日期不一致"
             )
 
         if trip_plan.end_date != request.end_date:
-
             errors.append(
                 "结束日期不一致"
             )
 
+        if not trip_plan.days:
+            errors.append("旅行计划没有每日行程")
+
         for day in trip_plan.days:
 
             if not day.attractions:
-
                 errors.append(
                     f"第 {day.day_index + 1} 天没有安排景点"
                 )
+
+        # =========================
+        # 资源真实性
+        # =========================
+
+        real_attraction_ids = {
+            item.id
+            for item in state.get(
+                "attractions",
+                []
+            )
+        }
+
+        real_hotel_ids = {
+            item.id
+            for item in state.get(
+                "hotels",
+                []
+            )
+        }
+
+        for day in trip_plan.days:
+
+            for attraction in day.attractions:
+
+                if attraction.id not in real_attraction_ids:
+                    errors.append(
+                        f"发现不存在的景点 ID: {attraction.id}"
+                    )
+
+            if (
+                    day.hotel is not None
+                    and day.hotel.id not in real_hotel_ids
+            ):
+                errors.append(
+                    f"发现不存在的酒店 ID: {day.hotel.id}"
+                )
+
 
         # =========================
         # 结果
         # =========================
 
         if errors:
-
             return {
                 "validation_errors": errors,
                 "status": "validation_failed",

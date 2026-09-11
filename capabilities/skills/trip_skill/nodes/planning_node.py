@@ -34,7 +34,8 @@
 #             }
 from langchain_core.messages import SystemMessage, HumanMessage
 
-from capabilities.skills.trip_skill.prompts.trip_skill_prompt import TRIP_PLANNER_SYSTEM_PROMPT, TRIP_PLANNER_PROMPT
+from capabilities.skills.trip_skill.prompts.trip_planning_prompt import TRIP_PLANNING_PROMPT
+from capabilities.skills.trip_skill.schemas.plan_selection import PlanSelection
 from capabilities.skills.trip_skill.trip_plan.state import TripPlanState
 from schemas.trip_plan import TripPlan
 
@@ -49,8 +50,7 @@ class TripPlanningNode:
 
         self.structured_llm = (
             llm.with_structured_output(
-                # 这里应该传你的 TripPlan Pydantic Model
-                TripPlan
+                PlanSelection
             )
         )
 
@@ -59,50 +59,46 @@ class TripPlanningNode:
             state: TripPlanState,
     ):
         request = state['request']
+
         validation_errors = state.get("validation_errors", [])
-        replan_count = state.get("replan_count", 0)
+
+        correction = ""
 
         # 根据当前是否存在校验错误，
         # 构造首次规划 / 重新规划的提示信息
         if validation_errors:
             correction = f"""
-        这是第 {replan_count} 次重新规划。
-
-        上一次规划存在以下问题：
+        上一轮规划存在以下问题：
 
         {validation_errors}
 
-        请重点修正这些问题。
-        """
-        else:
-            correction = """
-        这是第一次规划，请根据用户需求生成最合理的旅行计划。
+        请重新规划并修正这些问题。
         """
 
-        prompt_value = TRIP_PLANNER_PROMPT.invoke(
+        prompt = TRIP_PLANNING_PROMPT.invoke(
             {
                 'correction': correction,
                 "city": request.city,
                 "start_date": request.start_date,
                 "end_date": request.end_date,
+                "travelers": request.travelers,
+                "budget": request.budget,
                 "preferences": request.preferences,
                 "attractions": state.get("attractions", []),
                 "hotels": state.get("hotels", []),
                 "weather": state.get("weather"),
-                # "validation_errors": validation_errors,
             }
         )
 
         try:
-            trip_plan = await self.structured_llm.ainvoke(
-                prompt_value
+            selection = await self.structured_llm.ainvoke(
+                prompt
             )
 
             return {
-                "trip_plan": trip_plan,
+                "trip_plan": selection,
                 "status": "completed",
                 "error": None,
-                "replan_count": replan_count + 1,
             }
         except Exception as e:
 

@@ -1,6 +1,8 @@
 from typing import TypedDict, Optional
 
+from capabilities.skills.trip_skill.schemas.plan_selection import PlanSelection
 from capabilities.skills.trip_skill.schemas.request import TripPlanRequest
+from capabilities.skills.trip_skill.schemas.resource_decision import ResourceDecision
 from schemas.trip_plan import TripPlan
 
 
@@ -12,14 +14,26 @@ class TripPlanState(TypedDict, total=False):
     request: TripPlanRequest
 
     # =========================
-    # 数据收集结果
+    # Decision LLM
+    # =========================
+
+    resource_decision: Optional[ResourceDecision]
+
+    # =========================
+    # 真实资源
     # =========================
 
     attractions: list
-
     hotels: list
-
+    meals: list
     weather: object
+    routes: list
+
+    # =========================
+    # Planning LLM
+    # =========================
+
+    plan_selection: Optional[PlanSelection]
 
     # =========================
     # Skill 执行结果

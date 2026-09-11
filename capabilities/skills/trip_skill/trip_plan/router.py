@@ -14,28 +14,17 @@ def route_after_validation(
     if not errors:
         return END
 
-    status = state.get('status')
+    replan_count = state.get(
+        "replan_count",
+        0
+    )
 
-    if status == 'completed':
-        return END
+    max_replan_count = state.get(
+        "max_replan_count",
+        1
+    )
 
-    if status == 'failed':
-        return END
-
-    if status == 'invalid':
-        replan_count = state.get(
-            'replan_count',
-            0,
-        )
-
-        max_replan_count = state.get(
-            'max_replan_count',
-            1,
-        )
-
-        if replan_count < max_replan_count:
-            return 'planning'
-
-        return END
+    if replan_count < max_replan_count:
+        return "planning"
 
     return END

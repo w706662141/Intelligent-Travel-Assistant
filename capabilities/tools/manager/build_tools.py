@@ -14,7 +14,6 @@ from capabilities.services import (
     MealService,
     AttractionService,
     GeocodeService,
-    TripPlanningService,
 
 )
 
@@ -43,17 +42,14 @@ async def build_tools_registry():
     weather_service = WeatherService(weather_gateway)
     meal_service = MealService(poi_gateway, gecode_service)
     route_service = RouteService(route_gateway)
-    trip_planning_service = TripPlanningService(
-        attraction_service,
-        hotel_service,
-        meal_service,
-        weather_service,
-        route_service
-    )
 
     model = get_agnes_model()
     trip_plan_skill = TripPlanSkill(
-        planning_service=trip_planning_service,
+        attraction_service=attraction_service,
+        hotel_service=hotel_service,
+        meal_service=meal_service,
+        weather_service=weather_service,
+        route_service=route_service,
         llm=model,
     )
 
