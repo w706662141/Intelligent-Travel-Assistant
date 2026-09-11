@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 from capabilities.skills.trip_skill.trip_plan.state import TripPlanState
 
 
@@ -21,6 +23,9 @@ class TripPlanValidationNode:
                 "status": "validation_failed",
             }
 
+        start = date.fromisoformat(request.start_date)
+        end = date.fromisoformat(request.end_date)
+
         if trip_plan.city != request.city:
             errors.append(
                 "旅行计划城市与用户请求不一致"
@@ -42,6 +47,21 @@ class TripPlanValidationNode:
 
         if not trip_plan.days:
             errors.append("旅行计划没有每日行程")
+
+        expected_dates = [
+            (start + timedelta(days=i)).isoformat()
+            for i in range((end - start).days + 1)
+        ]
+
+        actual_dates = [
+            day.date
+            for day in trip_plan.days
+        ]
+
+        if actual_dates != expected_dates:
+            errors.append(
+                "每日行程日期未完整覆盖旅行日期"
+            )
 
         for day in trip_plan.days:
 
