@@ -20,6 +20,7 @@ class ReActAgent:
         self.tool_executor = tool_executor
 
         tools = self.tool_registry.get_all()
+        # tools=[self.tool_registry.get('trip_plan')]
 
         self.model = model.bind_tools(tools)
 
