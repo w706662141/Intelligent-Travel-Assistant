@@ -36,7 +36,8 @@ class AmapMCPClient:
                     "command": self.command,
                     "args": [self.server_command],
                     "env": {
-                        "AMAP_MAPS_API_KEY": self.api_key
+                        "AMAP_MAPS_API_KEY": self.api_key,
+                        "PYTHONWARNINGS": "ignore:Field 'lifespan' has an incomplete definition.*",
                     },
                 }
             }

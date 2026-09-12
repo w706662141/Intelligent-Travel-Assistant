@@ -60,18 +60,44 @@ class TripPlanningNode:
 
         validation_errors = state.get("validation_errors", [])
 
+        replan_count = state.get(
+            "replan_count",
+            0,
+        )
+
+        max_replan_count = state.get(
+            "max_replan_count",
+            1,
+        )
+
+        # ======================================
+        # 判断是否是重新规划
+        # ======================================
+
+        is_replan = bool(
+            validation_errors
+        )
+
         correction = ""
 
         # 根据当前是否存在校验错误，
         # 构造首次规划 / 重新规划的提示信息
-        if validation_errors:
+        if is_replan:
             correction = f"""
-        上一轮规划存在以下问题：
+            上一轮旅行规划经过 Validator 校验后，
+            发现以下问题：
 
-        {validation_errors}
+            {chr(10).join(
+                f"- {error}"
+                for error in validation_errors
+            )}
 
-        请重新规划并修正这些问题。
-        """
+            请重新规划并修复以上问题。
+
+            注意：
+            必须继续使用系统提供的真实资源。
+            不要虚构新的景点 ID 或酒店 ID。
+            """
 
         prompt = TRIP_PLANNING_PROMPT.invoke(
             {
@@ -93,11 +119,6 @@ class TripPlanningNode:
                 prompt
             )
 
-            return {
-                "plan_selection": selection,
-                "status": "planned",
-                "error": None,
-            }
         except Exception as e:
 
             import traceback
@@ -107,3 +128,27 @@ class TripPlanningNode:
                 "status": "failed",
                 "error": f"{type(e).__name__}: {e}",
             }
+
+        # ======================================
+        # Replan Counter
+        # ======================================
+
+        next_replan_count = replan_count
+
+        if is_replan:
+
+            next_replan_count = (
+                replan_count + 1
+            )
+
+        return {
+
+            "plan_selection": selection,
+
+            "replan_count": next_replan_count,
+
+            "status": "planned",
+
+            "error": None,
+
+        }

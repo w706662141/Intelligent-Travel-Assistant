@@ -47,6 +47,8 @@ class TripPlanSkill:
 
             "meals": [],
 
+            "meals_by_day": {},
+
             "weather": None,
 
             "routes": [],

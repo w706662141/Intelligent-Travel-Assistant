@@ -1,92 +1,44 @@
-# from langgraph.graph import StateGraph, START, END
-#
-# from capabilities.skills.trip_skill.nodes.planning_node import TripPlanningNode
-# from capabilities.skills.trip_skill.nodes.validation_node import TripPlanValidationNode
-# from capabilities.skills.trip_skill.trip_plan.router import route_after_validation
-# from capabilities.skills.trip_skill.trip_plan.state import TripPlanState
-#
-#
-# class TripPlanGraph:
-#
-#     def __init__(
-#             self,
-#             planning_service
-#     ):
-#         self.planning_node = (
-#             TripPlanningNode(
-#                 planning_service
-#             )
-#         )
-#
-#         self.validation_node = (
-#             TripPlanValidationNode()
-#         )
-#
-#     def build(self):
-#         graph = StateGraph(
-#             TripPlanState
-#         )
-#         # =========================
-#         # Nodes
-#         # =========================
-#
-#         graph.add_node(
-#             'planning',
-#             self.planning_node
-#         )
-#         graph.add_node(
-#             'validation',
-#             self.validation_node
-#         )
-#
-#         # =========================
-#         # START
-#         # =========================
-#
-#         graph.add_edge(
-#             START,
-#             'planning'
-#         )
-#
-#         # =========================
-#         # Planning -> Validation
-#         # =========================
-#
-#         graph.add_edge(
-#             'planning',
-#             'validation',
-#         )
-#
-#         # =========================
-#         # Validation -> ...
-#         # =========================
-#
-#         graph.add_conditional_edges(
-#             'validation',
-#             route_after_validation,
-#             {
-#                 "planning": "planning",
-#                 END: END,
-#             },
-#         )
-#
-#         return graph.compile()
-from langgraph.graph import StateGraph
 from langgraph.graph import (
     StateGraph,
     START,
     END,
 )
 
-from capabilities.skills.trip_skill.nodes.builder_node import TripPlanBuilderNode
-from capabilities.skills.trip_skill.nodes.data_collection_node import TripDataCollectionNode
-from capabilities.skills.trip_skill.nodes.decision_node import TripResourceDecisionNode
-from capabilities.skills.trip_skill.nodes.planning_node import TripPlanningNode
-from capabilities.skills.trip_skill.nodes.resource_executor_node import TripResourceExecutorNode
-from capabilities.skills.trip_skill.nodes.route_executor_node import TripRouteExecutorNode
-from capabilities.skills.trip_skill.nodes.validation_node import TripPlanValidationNode
-from capabilities.skills.trip_skill.trip_plan.router import route_after_validation
-from capabilities.skills.trip_skill.trip_plan.state import TripPlanState
+from capabilities.skills.trip_skill.nodes.builder_node import (
+    TripPlanBuilderNode,
+)
+
+from capabilities.skills.trip_skill.nodes.decision_node import (
+    TripResourceDecisionNode,
+)
+
+from capabilities.skills.trip_skill.nodes.meal_executor_node import (
+    TripMealExecutorNode,
+)
+
+from capabilities.skills.trip_skill.nodes.planning_node import (
+    TripPlanningNode,
+)
+
+from capabilities.skills.trip_skill.nodes.resource_executor_node import (
+    TripResourceExecutorNode,
+)
+
+from capabilities.skills.trip_skill.nodes.route_executor_node import (
+    TripRouteExecutorNode,
+)
+
+from capabilities.skills.trip_skill.nodes.validation_node import (
+    TripPlanValidationNode,
+)
+
+from capabilities.skills.trip_skill.trip_plan.router import (
+    route_after_validation,
+)
+
+from capabilities.skills.trip_skill.trip_plan.state import (
+    TripPlanState,
+)
 
 
 class TripPlanGraph:
@@ -100,6 +52,7 @@ class TripPlanGraph:
             route_service,
             llm,
     ):
+
         self.decision_node = (
             TripResourceDecisionNode(llm)
         )
@@ -108,7 +61,6 @@ class TripPlanGraph:
             TripResourceExecutorNode(
                 attraction_service=attraction_service,
                 hotel_service=hotel_service,
-                meal_service=meal_service,
                 weather_service=weather_service,
             )
         )
@@ -117,9 +69,15 @@ class TripPlanGraph:
             TripPlanningNode(llm)
         )
 
+        self.meal_executor = (
+            TripMealExecutorNode(
+                meal_service=meal_service,
+            )
+        )
+
         self.route_executor = (
             TripRouteExecutorNode(
-                route_service
+                route_service=route_service,
             )
         )
 
@@ -132,27 +90,33 @@ class TripPlanGraph:
         )
 
     def build(self):
+
         graph = StateGraph(
             TripPlanState
         )
 
-        # =========================
+        # ======================================
         # Nodes
-        # =========================
+        # ======================================
 
         graph.add_node(
-            'decision',
+            "decision",
             self.decision_node,
         )
 
         graph.add_node(
-            'collect_resources',
+            "collect_resources",
             self.resource_executor,
         )
 
         graph.add_node(
-            'planning',
-            self.planning_node
+            "planning",
+            self.planning_node,
+        )
+
+        graph.add_node(
+            "meal",
+            self.meal_executor,
         )
 
         graph.add_node(
@@ -161,27 +125,27 @@ class TripPlanGraph:
         )
 
         graph.add_node(
-            'build',
+            "build",
             self.builder_node,
         )
 
         graph.add_node(
-            'validation',
-            self.validation_node
+            "validation",
+            self.validation_node,
         )
 
-        # =========================
-        # 主流程
-        # =========================
+        # ======================================
+        # Main Flow
+        # ======================================
 
         graph.add_edge(
             START,
-            'decision',
+            "decision",
         )
 
         graph.add_edge(
-            'decision',
-            'collect_resources',
+            "decision",
+            "collect_resources",
         )
 
         graph.add_edge(
@@ -190,13 +154,18 @@ class TripPlanGraph:
         )
 
         graph.add_edge(
-            'planning',
-            'route'
+            "planning",
+            "meal",
         )
 
         graph.add_edge(
-            'route',
-            'build'
+            "meal",
+            "route",
+        )
+
+        graph.add_edge(
+            "route",
+            "build",
         )
 
         graph.add_edge(
@@ -204,16 +173,16 @@ class TripPlanGraph:
             "validation",
         )
 
-        # =========================
-        # Validation -> ...
-        # =========================
+        # ======================================
+        # Validation
+        # ======================================
 
         graph.add_conditional_edges(
-            'validation',
+            "validation",
             route_after_validation,
             {
-                'planning': 'planning',
-                END: END
+                "planning": "planning",
+                END: END,
             },
         )
 

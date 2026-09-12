@@ -1,6 +1,7 @@
 from typing import Any
 
 from schemas.attraction import Attraction
+from schemas.hotel import Hotel
 from schemas.location import Location
 from schemas.poi import POIDetail, POISummary
 
@@ -152,4 +153,42 @@ class AmapPOIMapper:
                 detail.opentime2
                 or None
             ),
+        )
+    @staticmethod
+    def to_hotel(
+            detail: POIDetail,
+    ) -> Hotel:
+
+        location = None
+
+        if detail.location:
+
+            try:
+
+                longitude, latitude = (
+                    detail.location.split(",")
+                )
+
+                location = Location(
+                    longitude=float(longitude),
+                    latitude=float(latitude),
+                )
+
+            except (
+                ValueError,
+                TypeError,
+            ):
+                location = None
+
+        return Hotel(
+            id=detail.id,
+            name=detail.name or "",
+            address=detail.address or "",
+            location=location,
+            rating=(
+                str(detail.rating)
+                if detail.rating is not None
+                else ""
+            ),
+            type=detail.type or "",
         )

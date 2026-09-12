@@ -47,20 +47,8 @@ class HotelService:
                     detail_data
                 )
 
-                hotel = Hotel(
-                    name=detail.name,
-                    address=detail.address,
-                    location=(
-                        self._location(
-                            detail.location
-                        )
-                    ),
-                    rating=(
-                        str(detail.rating)
-                        if detail.rating is not None
-                        else ""
-                    ),
-                    type=detail.type,
+                hotel = AmapPOIMapper.to_hotel(
+                    detail
                 )
 
                 result.append(hotel)
@@ -107,20 +95,8 @@ class HotelService:
                     detail_data
                 )
 
-                hotel = Hotel(
-                    name=detail.name,
-                    address=detail.address,
-                    location=(
-                        self._location(
-                            detail.location
-                        )
-                    ),
-                    rating=(
-                        str(detail.rating)
-                        if detail.rating is not None
-                        else ""
-                    ),
-                    type=detail.type,
+                hotel = AmapPOIMapper.to_hotel(
+                    detail
                 )
 
                 result.append(hotel)

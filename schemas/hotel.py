@@ -7,6 +7,7 @@ from schemas.location import Location
 
 class Hotel(BaseModel):
     """酒店信息"""
+    id: Optional[str] = Field(default=None,description="酒店 POI ID")
     name: str = Field(..., description='酒店名称')
     address: str = Field(default='', description='酒店地址')
     location: Optional[Location] = Field(default=None, description='酒店位置')

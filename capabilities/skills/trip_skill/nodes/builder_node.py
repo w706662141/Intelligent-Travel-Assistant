@@ -26,6 +26,7 @@ class TripPlanBuilderNode:
                 'attractions',
                 []
             )
+            if item.id
         }
 
         hotels = {
@@ -36,12 +37,27 @@ class TripPlanBuilderNode:
             )
         }
 
+        meals_by_day = state.get(
+            "meals_by_day",
+            {}
+        )
+
+        routes = state.get(
+            "routes",
+            []
+        )
+
         days = []
 
         for index, selected_day in enumerate(
                 selection.days,
                 start=1,
         ):
+
+            # =========================
+            # 景点
+            # =========================
+
             selected_attractions = []
 
             for attraction_id in (
@@ -55,12 +71,39 @@ class TripPlanBuilderNode:
                         attraction
                     )
 
+            # =========================
+            # 酒店
+            # =========================
+
             hotel = None
 
             if selected_day.hotel_id:
                 hotel = hotels.get(
                     selected_day.hotel_id
                 )
+            # =========================
+            # 餐饮
+            # =========================
+
+            day_meals = meals_by_day.get(
+                selected_day.date,
+                []
+            )
+
+            # =========================
+            # 路线
+            # =========================
+
+            day_routes = [
+                route
+                for route in routes
+                if route.get('date')
+                   == selected_day.date
+            ]
+
+            # =========================
+            # DayPlan
+            # =========================
 
             days.append(
                 DayPlan(
@@ -69,15 +112,20 @@ class TripPlanBuilderNode:
                     description=(
                         selected_day.description
                     ),
-                    accomodation=(
+                    accommodation=(
                         hotel.name
                         if hotel else ""
                     ),
                     hotel=hotel,
                     attractions=selected_attractions,
-                    meals=[]
+                    meals=day_meals,
+                    routes=day_routes
                 )
             )
+
+        # =========================
+        # TripPlan
+        # =========================
 
         trip_plan = TripPlan(
             city=request.city,
@@ -85,7 +133,7 @@ class TripPlanBuilderNode:
             end_date=request.end_date,
             days=days,
             weather_info=(
-                [state["weather"]]
+                state["weather"]
                 if state.get("weather")
                 else []
             ),

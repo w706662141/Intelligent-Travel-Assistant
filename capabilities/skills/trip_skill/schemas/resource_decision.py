@@ -8,8 +8,6 @@ class ResourceRequest(BaseModel):
         "attraction",
         "hotel",
         "weather",
-        "meal",
-        "route",
     ]
 
     reason : str = Field(
@@ -26,5 +24,6 @@ class ResourceRequest(BaseModel):
 
 class ResourceDecision(BaseModel):
     requests: list[ResourceRequest] = Field(
-        default_factory=list
+        default_factory=list,
+        description="规划前需要获取的资源",
     )

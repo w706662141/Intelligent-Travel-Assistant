@@ -4,16 +4,21 @@ from capabilities.skills.trip_skill.trip_plan.state import TripPlanState
 
 
 class TripResourceExecutorNode:
+
+    SUPPORTED_RESOURCES = {
+        "attraction",
+        "hotel",
+        "weather",
+    }
+
     def __init__(
             self,
             attraction_service,
             hotel_service,
-            meal_service,
             weather_service,
     ):
         self.attraction_service = attraction_service
         self.hotel_service = hotel_service
-        self.meal_service = meal_service
         self.weather_service = weather_service
 
     async def __call__(
@@ -85,8 +90,6 @@ class TripResourceExecutorNode:
 
         return {
             **results,
-            "meals": [],
-            "routes": [],
             "status": "resources_collected",
             "error": None,
         }
