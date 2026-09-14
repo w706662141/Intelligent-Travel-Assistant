@@ -47,6 +47,18 @@ class TripPlanBuilderNode:
             []
         )
 
+        print("\n========== Builder ==========")
+        print("真实景点 ID:")
+        print(list(attractions.keys()))
+
+        print("\nLLM选择:")
+        for day in selection.days:
+            print(
+                day.date,
+                day.attraction_ids
+            )
+        print("=============================")
+
         days = []
 
         for index, selected_day in enumerate(

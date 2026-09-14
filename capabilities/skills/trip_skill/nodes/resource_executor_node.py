@@ -46,7 +46,7 @@ class TripResourceExecutorNode:
                 self.attraction_service.search_with_details(
                     city=request.city,
                     keyword='景点',
-                    limit=10,
+                    limit=5,
                 )
             )
 

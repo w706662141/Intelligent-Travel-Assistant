@@ -118,6 +118,9 @@ class TripPlanningNode:
             selection = await self.structured_llm.ainvoke(
                 prompt
             )
+            print("\n========== Planning Result ==========")
+            print(selection)
+            print("=====================================")
 
         except Exception as e:
 
