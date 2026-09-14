@@ -1,7 +1,6 @@
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 
-
 from agent.graph.graph import TravelAgentGraph
 from agent.graph.state import AgentStatus
 from capabilities.prompts.system import TRAVEL_AGENT_SYSTEM_PROMPT
@@ -9,6 +8,22 @@ from capabilities.tools.manager.tool_registry import ToolRegistry
 
 
 class ReActAgent:
+
+    MAIN_TOOL_NAMES = [
+        "trip_plan",
+
+        # 单项查询
+        "search_attraction",
+        "search_hotels",
+        "search_nearby_meals",
+        "query_weather",
+
+        # 路线查询
+        "plan_walking_route",
+        "plan_driving_route",
+        "plan_bicycling_route",
+        "plan_transit_route",
+    ]
 
     def __init__(
             self,
@@ -19,8 +34,11 @@ class ReActAgent:
         self.tool_registry = tool_registry
         self.tool_executor = tool_executor
 
-        tools = self.tool_registry.get_all()
-        # tools=[self.tool_registry.get('trip_plan')]
+        # tools = self.tool_registry.get_all()
+        tools = [
+            self.tool_registry.get(name)
+            for name in self.MAIN_TOOL_NAMES
+        ]
 
         self.model = model.bind_tools(tools)
 

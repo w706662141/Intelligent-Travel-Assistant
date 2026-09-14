@@ -1,13 +1,14 @@
 import asyncio
 import time
-from agent.graph.state import AgentStatus
+from agent.graph.state import AgentStatus, TaskMode
 
 
 class AgentNodes:
 
     def __init__(
             self,
-            model):
+            model
+    ):
         self.model = model
 
     async def agent(self, state):
@@ -50,16 +51,54 @@ class AgentNodes:
             print("\nLLM Response:")
             print(response)
 
+            tool_calls = response.tool_calls
+
             tool_call_count = (
                     state["tool_call_count"]
                     + len(response.tool_calls)
             )
 
-            return {
+            result = {
                 "messages": [response],
                 "iteration": iteration,
                 "tool_call_count": tool_call_count,
             }
+
+            # ==================================================
+            # 第一次产生 Tool Call 时确定任务模式
+            # ==================================================
+            current_task_mode = state.get('task_mode')
+
+            if current_task_mode is None and tool_calls:
+                tool_names = {
+                    call['name']
+                    for call in tool_calls
+                }
+
+                # ==============================================
+                # 只要第一次调用 trip_plan
+                # 就认为这是完整旅行规划任务
+                # ==============================================
+
+                if 'trip_plan' in tool_names:
+                    result['task_name'] = (
+                        TaskMode.TRAVEL_PLANNING
+                    )
+                else:
+                    result['task_name'] = (
+                        TaskMode.DIRECT_QUERY
+                    )
+
+            # ==================================================
+            # 保存最后一轮 Tool 名称
+            # ==================================================
+            if tool_calls:
+                result["last_tool_name"] = (
+                    tool_calls[-1]["name"]
+                )
+
+            return result
+
         except Exception as e:
 
             return {

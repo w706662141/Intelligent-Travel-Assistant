@@ -88,7 +88,7 @@ TRIP_PLANNING_PROMPT = ChatPromptTemplate.from_messages(
 请生成 PlanSelection。
 
 只输出结构化结果。
-""",
+"""
         ),
     ]
 )

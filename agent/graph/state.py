@@ -3,8 +3,14 @@ from langgraph.graph import MessagesState
 from enum import Enum
 
 
-class AgentStatus(str, Enum):
+class TaskMode(str, Enum):
 
+    TRAVEL_PLANNING = "travel_planning"
+
+    DIRECT_QUERY = "direct_query"
+
+
+class AgentStatus(str, Enum):
     RUNNING = "running"
 
     COMPLETED = "completed"
@@ -20,6 +26,10 @@ class AgentState(MessagesState):
     max_iterations: int
 
     status: AgentStatus
+
+    task_mode: TaskMode | None
+
+    last_tool_name: str | None
 
     error: str | None
 
