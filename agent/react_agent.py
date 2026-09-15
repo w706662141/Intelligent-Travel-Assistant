@@ -34,7 +34,6 @@ class ReActAgent:
         self.tool_registry = tool_registry
         self.tool_executor = tool_executor
 
-        # tools = self.tool_registry.get_all()
         tools = [
             self.tool_registry.get(name)
             for name in self.MAIN_TOOL_NAMES

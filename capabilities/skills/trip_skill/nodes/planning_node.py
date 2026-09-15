@@ -65,11 +65,6 @@ class TripPlanningNode:
             0,
         )
 
-        max_replan_count = state.get(
-            "max_replan_count",
-            1,
-        )
-
         # ======================================
         # 判断是否是重新规划
         # ======================================

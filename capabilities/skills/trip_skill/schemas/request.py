@@ -23,13 +23,13 @@ class TripPlanRequest(BaseModel):
         default=1,
         ge=1,
         le=20,
-        description="旅行人数"
+        description="出行总人数，默认1人。若用户未明确说明，填 1"
     )
 
     budget: int | None = Field(
         default=None,
         ge=0,
-        description="总预算，单位人民币"
+        description="总体预算金额，单位为人民币元（如 5000）。用户未明确提及具体预算数值时不要填写，绝对不要猜测或假设。"
     )
 
     preferences: list[str] = Field(

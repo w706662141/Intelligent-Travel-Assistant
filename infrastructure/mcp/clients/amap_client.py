@@ -34,10 +34,14 @@ class AmapMCPClient:
                 "amap": {
                     "transport": "stdio",
                     "command": self.command,
-                    "args": [self.server_command],
+                    "args": [
+                        "--python",
+                        "3.10",
+                        self.server_command,
+                        "stdio",
+                    ],
                     "env": {
                         "AMAP_MAPS_API_KEY": self.api_key,
-                        "PYTHONWARNINGS": "ignore:Field 'lifespan' has an incomplete definition.*",
                     },
                 }
             }

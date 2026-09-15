@@ -1,3 +1,6 @@
+from agent.graph.state import AgentStatus
+
+
 class ToolNodes:
     def __init__(
             self,
@@ -14,32 +17,34 @@ class ToolNodes:
 
         tool_messages = []
 
-        last_tool_name = None
+        executed_tool_names = []
 
         for tool_call in last_message.tool_calls:
 
             tool_name = tool_call["name"]
 
-            last_tool_name = tool_name
+            executed_tool_names.append(tool_name)
 
             print("\nTool Call:")
             print(tool_call)
 
             try:
                 tool_message = (
-                    await self.tool_executor.execute(
-                        tool_call
-                    )
+                    await self.tool_executor.execute(tool_call)
                 )
 
-                tool_messages.append(
-                    tool_message
-                )
+                tool_messages.append(tool_message)
+
                 print("\nTool Result:")
                 print(tool_message)
+
             except Exception as e:
+                print(
+                    "Tool execution failed: %s",
+                    tool_name,
+                )
                 return {
-                    "status": "failed",
+                    "status": AgentStatus.FAILED,
                     "error": (
                         f"Tool execution failed: {e}"
                     )
@@ -48,9 +53,7 @@ class ToolNodes:
         return {
 
             "messages": tool_messages,
-
-            "last_tool_name": last_tool_name,
-
+            "executed_tool_names": executed_tool_names,
             "tool_result_count": (
                     state["tool_result_count"]
                     + len(tool_messages)

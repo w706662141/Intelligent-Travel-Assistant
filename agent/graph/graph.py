@@ -13,7 +13,6 @@ class TravelAgentGraph:
             tool_executor,
             ):
         self.agent_nodes = AgentNodes(model)
-
         self.tool_nodes = ToolNodes(tool_executor)
 
     def build(self):
