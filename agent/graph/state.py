@@ -22,8 +22,6 @@ class AgentState(MessagesState):
 
     status: AgentStatus
 
-    last_executed_tool_name: str | None
-
     executed_tool_names: list[str]
 
     error: str | None
