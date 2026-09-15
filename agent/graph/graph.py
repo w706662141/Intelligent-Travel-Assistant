@@ -2,7 +2,7 @@ from langgraph.graph import StateGraph, START, END
 
 from agent.graph.nodes.agent_node import AgentNodes
 from agent.graph.nodes.tool_node import ToolNodes
-from agent.graph.router import should_continue
+from agent.graph.router import should_continue, route_after_tools
 from agent.graph.state import AgentState
 
 
@@ -11,7 +11,7 @@ class TravelAgentGraph:
             self,
             model,
             tool_executor,
-            ):
+    ):
         self.agent_nodes = AgentNodes(model)
         self.tool_nodes = ToolNodes(tool_executor)
 
@@ -44,9 +44,18 @@ class TravelAgentGraph:
             }
         )
 
-        graph.add_edge(
+        graph.add_conditional_edges(
             'tools',
-            'agent'
+            route_after_tools,
+            {
+                'agent': 'agent',
+                END: END
+            }
         )
+
+        # graph.add_edge(
+        #     'tools',
+        #     'agent'
+        # )
 
         return graph.compile()

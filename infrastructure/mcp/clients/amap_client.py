@@ -35,10 +35,7 @@ class AmapMCPClient:
                     "transport": "stdio",
                     "command": self.command,
                     "args": [
-                        "--python",
-                        "3.10",
                         self.server_command,
-                        "stdio",
                     ],
                     "env": {
                         "AMAP_MAPS_API_KEY": self.api_key,

@@ -1,5 +1,6 @@
 import traceback
 
+from capabilities.skills.trip_skill.schemas.result import TripSkillResult
 from capabilities.skills.trip_skill.trip_plan.graph import TripPlanGraph
 from capabilities.skills.trip_skill.schemas.request import TripPlanRequest
 
@@ -108,18 +109,51 @@ class TripPlanSkill:
             print("=" * 100)
 
             # 调试阶段一定要保留原始异常
-            raise
+
+            return TripSkillResult(
+                success=False,
+                message=(
+                    "旅行规划过程中发生异常，"
+                    "暂时无法生成完整的旅行计划。"
+                ),
+                error_code="SYSTEM_ERROR",
+            )
 
         if result.get('status') != 'validated':
-            raise RuntimeError(
-                result.get(
-                    "error"
+            error_code = (
+                    result.get("error_code")
+                    or "TRIP_PLAN_FAILED"
+            )
+
+            error = result.get("error")
+
+            validation_errors = (
+                    result.get("validation_errors")
+                    or []
+            )
+
+            # 优先使用节点产生的错误
+            if error:
+                message = error
+
+            elif validation_errors:
+                message = (
+                        "旅行计划未能通过最终校验："
+                        + "；".join(validation_errors)
                 )
-                or str(
-                    result.get(
-                        "validation_errors"
-                    )
+
+                error_code = "PLAN_VALIDATION_FAILED"
+            else:
+
+                message = (
+                    "暂时无法生成完整的旅行计划，"
+                    "请稍后重试。"
                 )
+
+            return TripSkillResult(
+                success=False,
+                message=message,
+                error_code=error_code,
             )
 
         trip_plan = result.get(

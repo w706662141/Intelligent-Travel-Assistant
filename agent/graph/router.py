@@ -46,3 +46,27 @@ def should_continue(state):
         return "tools"
 
     return END
+
+
+def route_after_tools(state):
+
+    executed_tool_names = state.get(
+        "executed_tool_names",
+        []
+    )
+
+    # =========================================
+    # TripSkill 是终止型 Tool
+    # =========================================
+
+    if any(
+        name in TERMINAL_TOOLS
+        for name in executed_tool_names
+    ):
+        return END
+
+    # =========================================
+    # 普通 Tool
+    # =========================================
+
+    return "agent"

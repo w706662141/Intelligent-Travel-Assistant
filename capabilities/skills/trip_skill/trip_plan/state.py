@@ -50,6 +50,8 @@ class TripPlanState(TypedDict, total=False):
 
     error: Optional[str]
 
+    error_code: Optional[str]
+
     # =========================
     # 校验信息
     # =========================

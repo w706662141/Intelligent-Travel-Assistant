@@ -21,5 +21,6 @@ tool_executor = ToolExecutor(tool_registry, retry_handler)
 agent = ReActAgent(model, tool_registry, tool_executor)
 
 print(asyncio.run(agent.run('2026年9月15日到17日我要去南京玩，给我推荐一些景点以及附近的酒店和这几天天气'
+
             )))
 # print(asyncio.run(agent.run('洛阳有哪些景点，最近哪里天气如何')))
