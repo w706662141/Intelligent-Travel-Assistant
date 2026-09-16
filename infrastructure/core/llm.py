@@ -12,7 +12,7 @@ def get_nvidia_model():
     global _nvidia_model
     if not _nvidia_model:
         _nvidia_model = ChatOpenAI(
-            model='nvidia/nemotron-3-ultra-550b-a55b:free',
+            model='nvidia/nemotron-3.5-lightning:free',
             openai_api_key=os.getenv('OPENROUTER_API_KEY'),
             openai_api_base="https://openrouter.ai/api/v1",
         )
@@ -24,7 +24,7 @@ def get_agnes_model():
     global _agnes_model
     if not _agnes_model:
         _agnes_model = ChatOpenAI(
-            model='agnes-2.5-flash',
+            model='agnes-3.0-flash',
             openai_api_key=os.getenv('AGNES_API_KEY'),
             openai_api_base="https://apihub.agnes-ai.com/v1",
         )

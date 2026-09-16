@@ -39,6 +39,9 @@ class AmapMCPClient:
                     ],
                     "env": {
                         "AMAP_MAPS_API_KEY": self.api_key,
+                        "PYTHONUTF8": "1",  # ←新增
+                        "PYTHONIOENCODING": "utf-8",  # ←新增（双保险）
+
                     },
                 }
             }

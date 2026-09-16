@@ -165,4 +165,10 @@ class TripPlanSkill:
                 "TripPlanSkill 未生成旅行计划"
             )
 
-        return trip_plan
+        return TripSkillResult(
+            success=True,
+            message="旅行计划已生成完成。",
+            trip_plan=trip_plan,
+        )
+
+        # return trip_plan

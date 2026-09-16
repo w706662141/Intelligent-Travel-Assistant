@@ -44,18 +44,18 @@ class TravelAgentGraph:
             }
         )
 
-        graph.add_conditional_edges(
-            'tools',
-            route_after_tools,
-            {
-                'agent': 'agent',
-                END: END
-            }
-        )
-
-        # graph.add_edge(
+        # graph.add_conditional_edges(
         #     'tools',
-        #     'agent'
+        #     route_after_tools,
+        #     {
+        #         'agent': 'agent',
+        #         END: END
+        #     }
         # )
+
+        graph.add_edge(
+            'tools',
+            'agent'
+        )
 
         return graph.compile()

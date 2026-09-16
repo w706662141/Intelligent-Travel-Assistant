@@ -50,8 +50,8 @@ class TripResourceExecutorNode:
                 )
             )
 
-        if 'hotel' in resource_types:
-            tasks['hotel'] = (
+        if 'hotels' in resource_types:
+            tasks['hotels'] = (
                 self.hotel_service.search(
                     city=request.city,
                     limit=5
