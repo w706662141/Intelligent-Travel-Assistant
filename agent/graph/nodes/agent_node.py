@@ -1,5 +1,7 @@
 import asyncio
 import time
+import traceback
+
 from agent.graph.state import AgentStatus
 
 
@@ -66,6 +68,12 @@ class AgentNodes:
             return result
 
         except Exception as e:
+
+            print("\n========== LLM ERROR ==========")
+            traceback.print_exc()
+            print("Exception type:", type(e).__name__)
+            print("Exception:", repr(e))
+            print("================================\n")
 
             return {
                 "status": AgentStatus.FAILED,

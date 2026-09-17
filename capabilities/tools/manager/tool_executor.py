@@ -1,4 +1,5 @@
 import inspect
+import json
 
 from langchain_core.messages import ToolMessage
 
@@ -150,6 +151,10 @@ class ToolExecutor:
                 content=str(
                     result.result
                 ),
+                # content=json.dumps(
+                #     result.result,
+                #     ensure_ascii=False
+                # ),
                 tool_call_id=tool_call_id,
                 name=tool_name,
             )

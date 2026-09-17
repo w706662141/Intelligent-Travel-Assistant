@@ -29,6 +29,7 @@ from infrastructure.mcp.clients.amap_client import AmapMCPClient
 
 async def build_tools_registry():
     client = AmapMCPClient(api_key=settings.AMAP_MAPS_API_KEY)
+
     await client.connect()
 
     poi_gateway = AmapPOIGateway(client)

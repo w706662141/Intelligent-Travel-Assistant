@@ -1,6 +1,7 @@
 from typing import Any
 
 from langchain_mcp_adapters.client import MultiServerMCPClient
+from mcp.client.stdio import get_default_environment
 
 
 class AmapMCPClient:
@@ -38,10 +39,10 @@ class AmapMCPClient:
                         self.server_command,
                     ],
                     "env": {
+                        **get_default_environment(),
                         "AMAP_MAPS_API_KEY": self.api_key,
-                        "PYTHONUTF8": "1",  # ←新增
-                        "PYTHONIOENCODING": "utf-8",  # ←新增（双保险）
-
+                        # "PYTHONUTF8": "1",
+                        # "PYTHONIOENCODING": "utf-8",
                     },
                 }
             }
@@ -79,5 +80,17 @@ class AmapMCPClient:
         调用指定 MCP Tool
         """
 
+        print(
+            f"[MCP CALL START] "
+            f"name={name}, "
+            f"arguments={arguments}"
+        )
         tool = self.get_tool(name)
-        return await tool.ainvoke(arguments)
+        result = await tool.ainvoke(arguments)
+
+        print(
+            f"[MCP CALL END] "
+            f"name={name}"
+        )
+
+        return result

@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 class ResourceRequest(BaseModel):
     resource_type: Literal[
         "attraction",
-        "hotel",
+        "hotels",
         "weather",
     ]
 

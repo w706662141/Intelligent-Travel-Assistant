@@ -4,7 +4,8 @@ from infrastructure.amap.response_parser import AmapResponseParser
 
 class AmapDistanceGateway:
     def __init__(self,
-                 client: AmapMCPClient):
+                 client: AmapMCPClient
+                 ):
         self.client = client
 
     async def calculate(self,
