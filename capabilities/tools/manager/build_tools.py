@@ -66,6 +66,9 @@ async def build_tools_registry():
         )
     )
 
+    model = get_agnes_model()
+    trip_plan_model_with_tools = model.bind_tools(tools)
+
     tools.extend(
         create_meal_tools(
             meal_service
@@ -78,15 +81,12 @@ async def build_tools_registry():
         )
     )
 
-    model = get_agnes_model()
-    trip_plan_model_with_tools = model.bind_tools(tools)
-
     trip_plan_skill = TripPlanSkill(
         attraction_service=attraction_service,
         hotel_service=hotel_service,
-        meal_service=meal_service,
+        # meal_service=meal_service,
         weather_service=weather_service,
-        route_service=route_service,
+        # route_service=route_service,
         llm=trip_plan_model_with_tools,
     )
 

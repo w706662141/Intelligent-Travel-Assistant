@@ -25,10 +25,10 @@ class TripPlanState(TypedDict, total=False):
 
     attractions: list
     hotels: list
-    meals: list
-    meals_by_day: dict[str, list]
+    # meals: list
+    # meals_by_day: dict[str, list]
     weather: object
-    routes: list
+    # routes: list
 
     # =========================
     # Planning LLM

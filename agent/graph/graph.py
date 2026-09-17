@@ -2,7 +2,7 @@ from langgraph.graph import StateGraph, START, END
 
 from agent.graph.nodes.agent_node import AgentNodes
 from agent.graph.nodes.tool_node import ToolNodes
-from agent.graph.router import should_continue, route_after_tools
+from agent.graph.router import should_continue
 from agent.graph.state import AgentState
 
 

@@ -37,15 +37,15 @@ class TripPlanBuilderNode:
             )
         }
 
-        meals_by_day = state.get(
-            "meals_by_day",
-            {}
-        )
-
-        routes = state.get(
-            "routes",
-            []
-        )
+        # meals_by_day = state.get(
+        #     "meals_by_day",
+        #     {}
+        # )
+        #
+        # routes = state.get(
+        #     "routes",
+        #     []
+        # )
 
         print("\n========== Builder ==========")
         print("真实景点 ID:")
@@ -97,21 +97,21 @@ class TripPlanBuilderNode:
             # 餐饮
             # =========================
 
-            day_meals = meals_by_day.get(
-                selected_day.date,
-                []
-            )
+            # day_meals = meals_by_day.get(
+            #     selected_day.date,
+            #     []
+            # )
 
             # =========================
             # 路线
             # =========================
 
-            day_routes = [
-                route
-                for route in routes
-                if route.get('date')
-                   == selected_day.date
-            ]
+            # day_routes = [
+            #     route
+            #     for route in routes
+            #     if route.get('date')
+            #        == selected_day.date
+            # ]
 
             # =========================
             # DayPlan
@@ -130,8 +130,8 @@ class TripPlanBuilderNode:
                     ),
                     hotel=hotel,
                     attractions=selected_attractions,
-                    meals=day_meals,
-                    routes=day_routes
+                    # meals=day_meals,
+                    # routes=day_routes
                 )
             )
 

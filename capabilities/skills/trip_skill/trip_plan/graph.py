@@ -47,9 +47,9 @@ class TripPlanGraph:
             self,
             attraction_service,
             hotel_service,
-            meal_service,
+            # meal_service,
             weather_service,
-            route_service,
+            # route_service,
             llm,
     ):
 
@@ -69,17 +69,17 @@ class TripPlanGraph:
             TripPlanningNode(llm)
         )
 
-        self.meal_executor = (
-            TripMealExecutorNode(
-                meal_service=meal_service,
-            )
-        )
-
-        self.route_executor = (
-            TripRouteExecutorNode(
-                route_service=route_service,
-            )
-        )
+        # self.meal_executor = (
+        #     TripMealExecutorNode(
+        #         meal_service=meal_service,
+        #     )
+        # )
+        #
+        # self.route_executor = (
+        #     TripRouteExecutorNode(
+        #         route_service=route_service,
+        #     )
+        # )
 
         self.builder_node = (
             TripPlanBuilderNode()
@@ -114,15 +114,15 @@ class TripPlanGraph:
             self.planning_node,
         )
 
-        graph.add_node(
-            "meal",
-            self.meal_executor,
-        )
-
-        graph.add_node(
-            "route",
-            self.route_executor,
-        )
+        # graph.add_node(
+        #     "meal",
+        #     self.meal_executor,
+        # )
+        #
+        # graph.add_node(
+        #     "route",
+        #     self.route_executor,
+        # )
 
         graph.add_node(
             "build",
@@ -153,23 +153,23 @@ class TripPlanGraph:
             "planning",
         )
 
+        # graph.add_edge(
+        #     "planning",
+        #     "meal",
+        # )
+        #
+        # graph.add_edge(
+        #     "meal",
+        #     "route",
+        # )
+        #
+        # graph.add_edge(
+        #     "route",
+        #     "build",
+        # )
+
         graph.add_edge(
             "planning",
-            "meal",
-        )
-
-        graph.add_edge(
-            "meal",
-            "route",
-        )
-
-        graph.add_edge(
-            "route",
-            "build",
-        )
-
-        graph.add_edge(
-            "build",
             "validation",
         )
 

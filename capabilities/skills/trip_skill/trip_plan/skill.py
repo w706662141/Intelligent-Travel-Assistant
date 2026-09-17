@@ -11,9 +11,9 @@ class TripPlanSkill:
             self,
             attraction_service,
             hotel_service,
-            meal_service,
+            # meal_service,
             weather_service,
-            route_service,
+            # route_service,
             llm,
     ):
         self.llm = llm
@@ -22,9 +22,9 @@ class TripPlanSkill:
             TripPlanGraph(
                 attraction_service,
                 hotel_service,
-                meal_service,
+                # meal_service,
                 weather_service,
-                route_service,
+                # route_service,
                 self.llm
             ).build()
         )
