@@ -7,7 +7,7 @@ class TripResourceExecutorNode:
 
     SUPPORTED_RESOURCES = {
         "attraction",
-        "hotel",
+        "hotels",
         "weather",
     }
 

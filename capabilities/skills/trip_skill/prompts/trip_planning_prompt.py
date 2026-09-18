@@ -38,8 +38,6 @@ TRIP_PLANNING_SYSTEM_PROMPT = """
 9. 每天安排合理数量的景点。
 10. 考虑天气情况。
 11. 必须完整覆盖旅行日期。
-12. transport_mode 必须使用：
-    walking / driving / bicycling / transit
 """
 
 

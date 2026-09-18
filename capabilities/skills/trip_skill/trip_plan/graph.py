@@ -163,13 +163,13 @@ class TripPlanGraph:
         #     "route",
         # )
         #
-        # graph.add_edge(
-        #     "route",
-        #     "build",
-        # )
-
         graph.add_edge(
             "planning",
+            "build",
+        )
+
+        graph.add_edge(
+            "build",
             "validation",
         )
 

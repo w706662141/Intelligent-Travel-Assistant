@@ -20,7 +20,7 @@ retry_handler = RetryHandler(policy, error_classifier)
 tool_executor = ToolExecutor(tool_registry, retry_handler)
 agent = ReActAgent(model, tool_registry, tool_executor)
 
-print(asyncio.run(agent.run('2026年9月17日到19日我要去南京玩，推荐一些景点以及附近的酒店和这几天天气'
+print(asyncio.run(agent.run('2026年9月22日到23日我要去南京玩给我规划一下'
                             # '推荐一下景点附近的餐厅'
             )))
 # print(asyncio.run(agent.run('洛阳龙门石窟去看洛阳牡丹有哪些公交路线？')))

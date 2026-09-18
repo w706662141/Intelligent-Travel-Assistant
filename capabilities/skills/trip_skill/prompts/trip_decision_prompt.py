@@ -20,31 +20,6 @@ TRIP_DECISION_SYSTEM_PROMPT = """
 3. weather
    天气信息
    
-不要决定 meal。
-
-餐饮需要根据 Planning LLM 最终选择的景点后，
-再由 MealExecutor 搜索。
-
-不要决定 route。
-
-路线需要根据 Planning LLM 最终确定的景点顺序和交通方式后，
-再由 RouteExecutor 规划。
-
-因此：
-
-Decision LLM：
-决定前置资源。
-
-Planning LLM：
-决定具体行程。
-
-MealExecutor：
-根据最终行程搜索餐厅。
-
-RouteExecutor：
-根据最终行程计算路线。
-
-只输出 ResourceDecision。
 
 请遵守：
 
@@ -52,8 +27,6 @@ RouteExecutor：
 - 不需要的资源不要请求。
 - 多日旅行通常需要天气。
 - 多日旅行通常需要酒店。
-- 用户明确要求美食时，需要 meal。
-- 用户明确要求路线、交通或每日行程安排时，可以请求 route。
 - 不要生成具体景点。
 - 不要生成酒店名称。
 - 不要生成路线。

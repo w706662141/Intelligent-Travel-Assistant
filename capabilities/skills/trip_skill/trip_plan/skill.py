@@ -46,13 +46,13 @@ class TripPlanSkill:
 
             "hotels": [],
 
-            "meals": [],
-
-            "meals_by_day": {},
+            # "meals": [],
+            #
+            # "meals_by_day": {},
 
             "weather": None,
 
-            "routes": [],
+            # "routes": [],
 
             "plan_selection": None,
 
