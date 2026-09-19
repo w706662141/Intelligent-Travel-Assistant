@@ -1,0 +1,85 @@
+import asyncio
+import traceback
+
+from capabilities.subagents.trip_subagent.state import TripSubAgentState
+
+
+class TripAgentNodes:
+
+    def __init__(
+            self,
+            model,
+            max_iterations: int = 15,
+    ):
+        self.model = model
+        self.max_iterations = max_iterations
+
+
+    async def agent_node(
+            self,
+            state: TripSubAgentState,
+    ):
+        iteration = state["iteration"] + 1
+
+        print(
+            f"\n========== "
+            f"TripSubAgent Iteration {iteration} "
+            f"=========="
+        )
+
+        if iteration > state["max_iterations"]:
+            return {
+                "iteration": iteration,
+                "status": "max_iterations",
+                "error": "TripSubAgent max iterations reached",
+            }
+
+        try:
+            response = await asyncio.wait_for(
+                self.model.ainvoke(
+                    state["messages"]
+                ),
+                timeout=60,
+            )
+
+            tool_calls = getattr(
+                response,
+                "tool_calls",
+                [],
+            )
+
+            print("\n[TripSubAgent] LLM Response:")
+            print(response)
+
+            if tool_calls:
+                print("\n[TripSubAgent] Tool Calls:")
+                for call in tool_calls:
+                    print(call)
+
+            return {
+                "messages": [response],
+                "iteration": iteration,
+                "tool_call_count": (
+                    state["tool_call_count"]
+                    + len(tool_calls)
+                ),
+            }
+
+        except Exception as exc:
+
+            print(
+                "\n========== "
+                "TripSubAgent LLM ERROR "
+                "=========="
+            )
+
+            traceback.print_exc()
+
+            return {
+                "iteration": iteration,
+                "status": "failed",
+                "error": (
+                    f"TripSubAgent LLM execution failed: "
+                    f"{exc}"
+                ),
+            }

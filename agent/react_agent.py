@@ -10,7 +10,7 @@ from capabilities.tools.manager.tool_registry import ToolRegistry
 class ReActAgent:
 
     MAIN_TOOL_NAMES = [
-        "trip_plan",
+        "delegate_trip_task",
 
         # 单项查询
         "search_attraction",
@@ -30,7 +30,9 @@ class ReActAgent:
             model: ChatOpenAI,
             tool_registry: ToolRegistry,
             tool_executor,
-            max_iterations: int = 10):
+            max_iterations: int = 10
+    ):
+
         self.tool_registry = tool_registry
         self.tool_executor = tool_executor
 

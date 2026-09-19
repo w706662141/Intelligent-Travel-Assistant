@@ -1,4 +1,5 @@
 from capabilities.skills.trip_skill.trip_plan.skill import TripPlanSkill
+from capabilities.subagents.trip_subagent.subagent import TripSubAgent
 from capabilities.tools import (create_weather_tool,
                                 create_route_tools,
                                 create_meal_tools,
@@ -25,7 +26,9 @@ from infrastructure.amap.gateways.weather import AmapWeatherGateway
 from infrastructure.amap.gateways.geocode import AmapGeocodeGateway
 from infrastructure.core.llm import get_agnes_model
 from infrastructure.mcp.clients.amap_client import AmapMCPClient
-
+from capabilities.tools.trip_subagent_tool import (
+    create_trip_subagent_tool,
+)
 
 async def build_tools_registry():
     client = AmapMCPClient(api_key=settings.AMAP_MAPS_API_KEY)
@@ -66,8 +69,8 @@ async def build_tools_registry():
         )
     )
 
-    model = get_agnes_model()
-    trip_plan_model_with_tools = model.bind_tools(tools)
+    # model = get_agnes_model()
+    # trip_plan_model_with_tools = model.bind_tools(tools)
 
     tools.extend(
         create_meal_tools(
@@ -80,21 +83,37 @@ async def build_tools_registry():
             route_service
         )
     )
+    #
+    # trip_plan_skill = TripPlanSkill(
+    #     attraction_service=attraction_service,
+    #     hotel_service=hotel_service,
+    #     # meal_service=meal_service,
+    #     weather_service=weather_service,
+    #     # route_service=route_service,
+    #     llm=trip_plan_model_with_tools,
+    # )
 
-    trip_plan_skill = TripPlanSkill(
-        attraction_service=attraction_service,
-        hotel_service=hotel_service,
-        # meal_service=meal_service,
-        weather_service=weather_service,
-        # route_service=route_service,
-        llm=trip_plan_model_with_tools,
+    # tools.extend(
+    #     create_trip_plan_tool(
+    #         trip_plan_skill
+    #     )
+    # )
+
+    travel_tools = tools
+
+    trip_subagent = TripSubAgent(
+        tools=travel_tools,
+        max_iterations=15,
     )
 
-    tools.extend(
-        create_trip_plan_tool(
-            trip_plan_skill
+    delegate_trip_tool = (
+        create_trip_subagent_tool(
+            trip_subagent
         )
     )
-
     registry.register(tools)
+    # 新 SubAgent 委托 Tool
+    registry.register(
+        [delegate_trip_tool]
+    )
     return registry
