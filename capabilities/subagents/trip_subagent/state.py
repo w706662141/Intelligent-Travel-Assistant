@@ -31,4 +31,6 @@ class TripSubAgentState(MessagesState):
 
     tool_result_count: int
 
+    resource_data: list[dict]
+
     final_result: TripPlan | None

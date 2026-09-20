@@ -1,4 +1,5 @@
 import asyncio
+import json
 import traceback
 
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -21,6 +22,8 @@ class TripFinalizerNode:
         self,
         state: TripSubAgentState,
     ):
+        print("\n========== TripSubAgent Finalizer ==========")
+        print("[Finalizer] entered")
 
         request = state["request"]
 
@@ -117,17 +120,38 @@ class TripFinalizerNode:
 
         try:
 
+            resource_data = state.get(
+                "resource_data",
+                []
+            )
+
+            finalizer_input = f"""
+            用户旅行请求：
+
+            城市：{request.city}
+            开始日期：{request.start_date}
+            结束日期：{request.end_date}
+            人数：{request.travelers}
+            预算：{request.budget}
+            偏好：{request.preferences}
+
+            已经获取的真实资源数据：
+
+            {json.dumps(
+                resource_data,
+                ensure_ascii=False,
+                indent=2
+            )}
+
+            请仅根据以上数据生成 TripPlan。
+            """
             # 把 Agent 历史执行结果提供给 Finalizer
             execution_messages = [
                 SystemMessage(
                     content=finalizer_prompt
                 ),
-                *messages,
                 HumanMessage(
-                    content=(
-                        "请根据以上旅行请求和已经获取的 "
-                        "Tool 数据，生成最终 TripPlan。"
-                    )
+                    content=finalizer_input
                 ),
             ]
 
@@ -142,6 +166,9 @@ class TripFinalizerNode:
                 result = TripPlan.model_validate(
                     result
                 )
+
+            print("\n[Finalizer] generated TripPlan:")
+            print(result)
 
             return {
                 "final_result": result,

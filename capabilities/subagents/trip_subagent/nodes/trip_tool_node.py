@@ -18,13 +18,14 @@ class TripToolNodes:
         }
 
     async def tool_node(
-        self,
-        state: TripSubAgentState,
+            self,
+            state: TripSubAgentState,
     ):
 
         last_message = state["messages"][-1]
 
         tool_messages = []
+        tool_results = []
 
         for tool_call in last_message.tool_calls:
 
@@ -40,7 +41,6 @@ class TripToolNodes:
             )
 
             if tool is None:
-
                 tool_messages.append(
                     ToolMessage(
                         content=(
@@ -70,6 +70,13 @@ class TripToolNodes:
                     tool_message
                 )
 
+                # 给 Finalizer 使用
+                tool_results.append(
+                    {
+                        "tool": tool_name,
+                        "result": result,
+                    }
+                )
                 print(
                     "\n[TripSubAgent] Tool Result:"
                 )
@@ -104,8 +111,12 @@ class TripToolNodes:
 
         return {
             "messages": tool_messages,
+            "resource_data": [
+                *state.get("resource_data", []),
+                *tool_results,
+            ],
             "tool_result_count": (
-                state["tool_result_count"]
-                + len(tool_messages)
+                    state["tool_result_count"]
+                    + len(tool_messages)
             ),
         }
