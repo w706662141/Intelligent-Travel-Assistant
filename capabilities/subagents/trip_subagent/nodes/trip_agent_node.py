@@ -1,23 +1,29 @@
 import asyncio
 import traceback
 
-from capabilities.subagents.trip_subagent.state import TripSubAgentState
+from langchain_core.messages import SystemMessage
+
+from capabilities.subagents.trip_subagent.state import (
+    TripSubAgentState,
+)
+from capabilities.subagents.trip_subagent.prompts.prompt import (
+    TRIP_SUBAGENT_SYSTEM_PROMPT,
+)
 
 
 class TripAgentNodes:
 
     def __init__(
-            self,
-            model,
-            max_iterations: int = 15,
+        self,
+        model,
+        max_iterations: int = 15,
     ):
         self.model = model
         self.max_iterations = max_iterations
 
-
     async def agent_node(
-            self,
-            state: TripSubAgentState,
+        self,
+        state: TripSubAgentState,
     ):
         iteration = state["iteration"] + 1
 
@@ -31,13 +37,43 @@ class TripAgentNodes:
             return {
                 "iteration": iteration,
                 "status": "max_iterations",
-                "error": "TripSubAgent max iterations reached",
+                "error": (
+                    "TripSubAgent max iterations reached"
+                ),
             }
 
+        request = state["request"]
+
+        request_context = (
+            "\n\n【当前旅行请求】\n"
+            f"城市：{request.city}\n"
+            f"开始日期：{request.start_date}\n"
+            f"结束日期：{request.end_date}\n"
+            f"出行人数：{request.travelers}\n"
+            f"预算："
+            f"{request.budget if request.budget is not None else '未指定'}\n"
+            f"旅行偏好："
+            f"{', '.join(request.preferences) if request.preferences else '未指定'}"
+        )
+
+        messages = state["messages"]
+
+        # 第一轮没有 SystemMessage 时加入系统提示
+        if not messages:
+            messages = [
+                SystemMessage(
+                    content=(
+                        TRIP_SUBAGENT_SYSTEM_PROMPT
+                        + request_context
+                    )
+                )
+            ]
+
         try:
+
             response = await asyncio.wait_for(
                 self.model.ainvoke(
-                    state["messages"]
+                    messages
                 ),
                 timeout=60,
             )
@@ -48,11 +84,16 @@ class TripAgentNodes:
                 [],
             )
 
-            print("\n[TripSubAgent] LLM Response:")
+            print(
+                "\n[TripSubAgent] LLM Response:"
+            )
             print(response)
 
             if tool_calls:
-                print("\n[TripSubAgent] Tool Calls:")
+                print(
+                    "\n[TripSubAgent] Tool Calls:"
+                )
+
                 for call in tool_calls:
                     print(call)
 
@@ -79,7 +120,7 @@ class TripAgentNodes:
                 "iteration": iteration,
                 "status": "failed",
                 "error": (
-                    f"TripSubAgent LLM execution failed: "
+                    "TripSubAgent LLM execution failed: "
                     f"{exc}"
                 ),
             }

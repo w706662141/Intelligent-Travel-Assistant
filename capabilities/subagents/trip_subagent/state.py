@@ -1,5 +1,7 @@
 from langgraph.graph import MessagesState
 
+from capabilities.subagents.trip_subagent.schemas.request import TripPlanRequest
+
 
 class TripSubAgentState(MessagesState):
     """
@@ -14,7 +16,7 @@ class TripSubAgentState(MessagesState):
         负责复杂旅行任务内部的自主推理与 Tool Calling。
     """
 
-    task: str
+    request: TripPlanRequest
 
     iteration: int
 

@@ -1,65 +1,60 @@
-from langchain_core.messages import (
-    SystemMessage,
-    HumanMessage,
-)
-
+from capabilities.skills.trip_skill.schemas.request import TripPlanRequest
 from capabilities.subagents.trip_subagent.graph import (
     TripSubAgentGraph,
 )
-from capabilities.subagents.trip_subagent.prompts.prompt import (
-    TRIP_SUBAGENT_SYSTEM_PROMPT,
-)
 from infrastructure.core.llm import get_agnes_model
-
+from schemas.trip_plan import TripPlan
 
 class TripSubAgent:
 
     def __init__(
-            self,
-            tools,
-            max_iterations: int = 15,
+        self,
+        tools,
+        max_iterations: int = 15,
     ):
         self.tools = tools
+        self.max_iterations = max_iterations
 
         base_model = get_agnes_model()
 
+        # Agent 模型：
+        # 具备 Tool Calling 能力
         self.model = base_model.bind_tools(
             tools
         )
 
-        self.max_iterations = max_iterations
+        # Finalizer 模型：
+        # 只负责生成结构化 TripPlan
+        self.finalizer_model = (
+            base_model.with_structured_output(
+                TripPlan
+            )
+        )
 
         self.graph = TripSubAgentGraph(
             model=self.model,
+            finalizer_model=self.finalizer_model,
             tools=self.tools,
             max_iterations=max_iterations,
         ).build()
 
+
     async def run(
-            self,
-            task: str,
+        self,
+        request: TripPlanRequest,
     ) -> dict:
 
         result = await self.graph.ainvoke(
             {
-                "messages": [
-                    SystemMessage(
-                        content=(
-                            TRIP_SUBAGENT_SYSTEM_PROMPT
-                        )
-                    ),
-                    HumanMessage(
-                        content=task
-                    ),
-                ],
+                "messages": [],
 
-                "task": task,
+                # 核心：
+                # MainAgent 传入的结构化请求
+                "request": request,
 
                 "iteration": 0,
 
-                "max_iterations": (
-                    self.max_iterations
-                ),
+                "max_iterations": self.max_iterations,
 
                 "status": "running",
 
@@ -68,11 +63,14 @@ class TripSubAgent:
                 "tool_call_count": 0,
 
                 "tool_result_count": 0,
+
+                "final_result": None,
             }
         )
 
-        if result.get("status") == "failed":
+        status = result.get("status")
 
+        if status == "failed":
             return {
                 "success": False,
                 "message": (
@@ -82,8 +80,7 @@ class TripSubAgent:
                 "error": result.get("error"),
             }
 
-        if result.get("status") == "max_iterations":
-
+        if status == "max_iterations":
             return {
                 "success": False,
                 "message": (
@@ -95,25 +92,20 @@ class TripSubAgent:
                 ),
             }
 
-        messages = result.get(
-            "messages",
-            []
+        final_result = result.get(
+            "final_result"
         )
 
-        if not messages:
+        if final_result is None:
             return {
                 "success": False,
-                "message": (
-                    "旅行规划未生成有效结果。"
-                ),
-                "error": "EMPTY_RESULT",
+                "message": "旅行规划未生成有效结果。",
+                "error": "EMPTY_FINAL_RESULT",
             }
-
-        final_message = messages[-1]
 
         return {
             "success": True,
-            "message": final_message.content,
+            "trip_plan": final_result.model_dump(),
             "tool_call_count": result.get(
                 "tool_call_count",
                 0,

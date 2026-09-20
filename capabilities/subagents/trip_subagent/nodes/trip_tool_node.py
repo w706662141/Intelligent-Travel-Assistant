@@ -1,27 +1,26 @@
 import traceback
 
-from capabilities.subagents.trip_subagent.state import TripSubAgentState
+from langchain_core.messages import ToolMessage
+
+from capabilities.subagents.trip_subagent.state import (
+    TripSubAgentState,
+)
 
 
 class TripToolNodes:
 
-    def __init__(
-            self,
-            tools
-    ):
-
+    def __init__(self, tools):
         self.tools = tools
 
-    async def tool_node(
-            self,
-            state: TripSubAgentState,
-    ):
-        """
-        执行当前 LLM 请求的 Tool。
+        self.tool_map = {
+            tool.name: tool
+            for tool in tools
+        }
 
-        这里不使用旧 TripPlanGraph 的 Executor Node。
-        Tool 的选择权属于 TripSubAgent LLM。
-        """
+    async def tool_node(
+        self,
+        state: TripSubAgentState,
+    ):
 
         last_message = state["messages"][-1]
 
@@ -36,14 +35,30 @@ class TripToolNodes:
                 f"Executing Tool: {tool_name}"
             )
 
-            tool = self._get_tool(tool_name)
+            tool = self.tool_map.get(
+                tool_name
+            )
+
+            if tool is None:
+
+                tool_messages.append(
+                    ToolMessage(
+                        content=(
+                            f"Tool not found: "
+                            f"{tool_name}"
+                        ),
+                        tool_call_id=tool_call["id"],
+                        name=tool_name,
+                    )
+                )
+
+                continue
 
             try:
+
                 result = await tool.ainvoke(
                     tool_call["args"]
                 )
-
-                from langchain_core.messages import ToolMessage
 
                 tool_message = ToolMessage(
                     content=str(result),
@@ -70,13 +85,17 @@ class TripToolNodes:
 
                 traceback.print_exc()
 
-                from langchain_core.messages import ToolMessage
+                # 注意：
+                # 不直接让整个 Agent 崩溃。
+                # 将失败作为 ToolMessage 返回给 LLM，
+                # 让 Agent 自己决定是否重新尝试或换 Tool。
 
                 tool_messages.append(
                     ToolMessage(
                         content=(
-                            f"Tool execution failed: "
-                            f"{exc}"
+                            "Tool execution failed.\n"
+                            f"tool={tool_name}\n"
+                            f"error={exc}"
                         ),
                         tool_call_id=tool_call["id"],
                         name=tool_name,
@@ -86,18 +105,7 @@ class TripToolNodes:
         return {
             "messages": tool_messages,
             "tool_result_count": (
-                    state["tool_result_count"]
-                    + len(tool_messages)
+                state["tool_result_count"]
+                + len(tool_messages)
             ),
         }
-
-    def _get_tool(self, tool_name: str):
-        for tool in self.tools:
-
-            if tool.name == tool_name:
-                return tool
-
-        raise KeyError(
-            f"TripSubAgent Tool not found: "
-            f"{tool_name}"
-        )

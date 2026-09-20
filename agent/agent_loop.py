@@ -16,7 +16,8 @@ class AgentLoop:
 
     async def run(
             self,
-            state: AgentState) -> AgentState:
+            state: AgentState
+    ) -> AgentState:
 
         while not state.finished:
             # ==========================================
