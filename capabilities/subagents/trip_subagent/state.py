@@ -1,6 +1,7 @@
 from langgraph.graph import MessagesState
 
 from capabilities.subagents.trip_subagent.schemas.request import TripPlanRequest
+from schemas.trip_plan import TripPlan
 
 
 class TripSubAgentState(MessagesState):
@@ -29,3 +30,5 @@ class TripSubAgentState(MessagesState):
     tool_call_count: int
 
     tool_result_count: int
+
+    final_result: TripPlan | None

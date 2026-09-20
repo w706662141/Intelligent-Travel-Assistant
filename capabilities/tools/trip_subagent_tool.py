@@ -1,8 +1,6 @@
 from langchain_core.tools import tool
 
-from capabilities.skills.trip_skill.schemas.request import (
-    TripPlanRequest,
-)
+from capabilities.subagents.trip_subagent.schemas.request import TripPlanRequest
 
 
 def create_trip_subagent_tool(

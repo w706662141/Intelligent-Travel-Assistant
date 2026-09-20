@@ -6,9 +6,8 @@ from capabilities.subagents.trip_subagent.state import (
 
 
 def should_continue(
-    state: TripSubAgentState,
+        state: TripSubAgentState,
 ):
-
     status = state.get("status")
 
     if status in {

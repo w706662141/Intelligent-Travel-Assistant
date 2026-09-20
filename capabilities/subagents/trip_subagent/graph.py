@@ -28,13 +28,12 @@ from capabilities.subagents.trip_subagent.state import (
 class TripSubAgentGraph:
 
     def __init__(
-        self,
-        model,
-        finalizer_model,
-        tools,
-        max_iterations: int = 15,
+            self,
+            model,
+            finalizer_model,
+            tools,
+            max_iterations: int = 15,
     ):
-
         self.trip_agent_nodes = (
             TripAgentNodes(
                 model=model,
@@ -55,7 +54,6 @@ class TripSubAgentGraph:
         )
 
     def build(self):
-
         graph = StateGraph(
             TripSubAgentState
         )

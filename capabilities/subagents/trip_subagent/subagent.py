@@ -1,16 +1,17 @@
-from capabilities.skills.trip_skill.schemas.request import TripPlanRequest
 from capabilities.subagents.trip_subagent.graph import (
     TripSubAgentGraph,
 )
+from capabilities.subagents.trip_subagent.schemas.request import TripPlanRequest
 from infrastructure.core.llm import get_agnes_model
 from schemas.trip_plan import TripPlan
+
 
 class TripSubAgent:
 
     def __init__(
-        self,
-        tools,
-        max_iterations: int = 15,
+            self,
+            tools,
+            max_iterations: int = 15,
     ):
         self.tools = tools
         self.max_iterations = max_iterations
@@ -38,10 +39,9 @@ class TripSubAgent:
             max_iterations=max_iterations,
         ).build()
 
-
     async def run(
-        self,
-        request: TripPlanRequest,
+            self,
+            request: TripPlanRequest,
     ) -> dict:
 
         result = await self.graph.ainvoke(
