@@ -11,23 +11,37 @@ from schemas.trip_plan import TripPlan
 
 
 class TripFinalizerNode:
+    """
+    TripSubAgent Finalizer。
+
+    注意：
+
+    Finalizer 不读取 Agent messages。
+
+    Finalizer 只读取：
+
+    1. request
+    2. resource_data
+
+    因此它完全不关心 Agent 内部是如何推理的。
+    """
 
     def __init__(
-        self,
-        model,
+            self,
+            model,
+            llm_timeout: int = 120,
     ):
         self.model = model
+        self.llm_timeout = llm_timeout
 
     async def finalize(
-        self,
-        state: TripSubAgentState,
+            self,
+            state: TripSubAgentState,
     ):
         print("\n========== TripSubAgent Finalizer ==========")
         print("[Finalizer] entered")
 
         request = state["request"]
-
-        messages = state["messages"]
 
         finalizer_prompt = f"""
 你是旅行规划结果整理器。
@@ -59,17 +73,17 @@ class TripFinalizerNode:
 
 预算：
 {
-    request.budget
-    if request.budget is not None
-    else "未指定"
-}
+        request.budget
+        if request.budget is not None
+        else "未指定"
+        }
 
 旅行偏好：
 {
-    ", ".join(request.preferences)
-    if request.preferences
-    else "未指定"
-}
+        ", ".join(request.preferences)
+        if request.preferences
+        else "未指定"
+        }
 
 ==============================
 【严格要求】
@@ -132,8 +146,19 @@ class TripFinalizerNode:
             开始日期：{request.start_date}
             结束日期：{request.end_date}
             人数：{request.travelers}
-            预算：{request.budget}
-            偏好：{request.preferences}
+            预算：
+            {
+            request.budget
+            if request.budget is not None
+            else "未指定"
+            }
+            
+            旅行偏好：
+            {
+            ", ".join(request.preferences)
+            if request.preferences
+            else "未指定"
+            }
 
             已经获取的真实资源数据：
 
@@ -155,11 +180,17 @@ class TripFinalizerNode:
                 ),
             ]
 
+            print(
+                "[Finalizer] "
+                f"input_length="
+                f"{len(finalizer_input)}"
+            )
+
             result = await asyncio.wait_for(
                 self.model.ainvoke(
                     execution_messages
                 ),
-                timeout=60,
+                timeout=self.llm_timeout,
             )
 
             if not isinstance(result, TripPlan):
@@ -168,6 +199,7 @@ class TripFinalizerNode:
                 )
 
             print("\n[Finalizer] generated TripPlan:")
+
             print(result)
 
             return {
@@ -176,12 +208,46 @@ class TripFinalizerNode:
                 "error": None,
             }
 
+        except asyncio.TimeoutError:
+
+            print(
+                "\n========== "
+                "TripSubAgent Finalizer TIMEOUT "
+                "=========="
+            )
+
+            print(
+                "[Finalizer] "
+                f"Timeout after "
+                f"{self.llm_timeout}s"
+            )
+            return {
+                "status": "failed",
+                "error": (
+                    "TripSubAgent Finalizer timeout: "
+                    f"no response within "
+                    f"{self.llm_timeout} seconds"
+                ),
+            }
         except Exception as exc:
 
             print(
                 "\n========== "
                 "TripSubAgent Finalizer ERROR "
                 "=========="
+            )
+
+            print(
+                f"[Finalizer] "
+                f"Exception Type: "
+                f"{type(exc).__name__}"
+            )
+
+            traceback.print_exc()
+
+            print(
+                f"[Finalizer] "
+                f"Exception: {repr(exc)}"
             )
 
             traceback.print_exc()

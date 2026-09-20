@@ -33,6 +33,8 @@ class TripSubAgentGraph:
             finalizer_model,
             tools,
             max_iterations: int = 15,
+            agent_llm_timeout: int = 120,
+            finalizer_llm_timeout: int = 120,
     ):
         self.trip_agent_nodes = (
             TripAgentNodes(
@@ -50,6 +52,7 @@ class TripSubAgentGraph:
         self.finalizer_node = (
             TripFinalizerNode(
                 model=finalizer_model,
+                llm_timeout=finalizer_llm_timeout,
             )
         )
 
