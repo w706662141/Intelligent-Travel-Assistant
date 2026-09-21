@@ -1,7 +1,7 @@
 import asyncio
 import traceback
 
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, HumanMessage
 
 from capabilities.subagents.trip_subagent.state import (
     TripSubAgentState,
@@ -64,8 +64,10 @@ class TripAgentNodes:
                 SystemMessage(
                     content=(
                         TRIP_SUBAGENT_SYSTEM_PROMPT
-                        + request_context
                     )
+                ),
+                HumanMessage(
+                    content=request_context
                 )
             ]
 

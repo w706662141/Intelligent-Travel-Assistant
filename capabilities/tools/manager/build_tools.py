@@ -51,7 +51,6 @@ from infrastructure.mcp.clients.amap_client import (
 
 
 async def build_tools_registry():
-
     # ==========================================
     # MCP Client
     # ==========================================
@@ -143,10 +142,10 @@ async def build_tools_registry():
     )
 
     resource_tools = (
-        attraction_tools
-        + hotel_tools
-        + weather_tools
-        + meal_tools
+            attraction_tools
+            + hotel_tools
+            + weather_tools
+            + meal_tools
     )
 
     # ==========================================
@@ -166,8 +165,8 @@ async def build_tools_registry():
     # ==========================================
 
     main_tools = (
-        resource_tools
-        + route_tools
+            resource_tools
+            + route_tools
     )
 
     # ==========================================

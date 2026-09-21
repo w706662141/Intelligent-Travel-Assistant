@@ -24,7 +24,7 @@ def get_agnes_model():
     global _agnes_model
     if not _agnes_model:
         _agnes_model = ChatOpenAI(
-            model='agnes-3.0-flash',
+            model='agnes-2.5-flash',
             openai_api_key=os.getenv('AGNES_API_KEY'),
             openai_api_base="https://apihub.agnes-ai.com/v1",
         )
@@ -32,12 +32,13 @@ def get_agnes_model():
 
 
 def get_agnes_tools_model():
-
     global _agnes_tools_model
     if not _agnes_tools_model:
         _agnes_tools_model = ChatOpenAI(
-            model='agnes-2.5-flash',
+            model='agnes-3.0-flash',
             openai_api_key=os.getenv('AGNES_API_KEY'),
             openai_api_base="https://apihub.agnes-ai.com/v1",
         )
     return _agnes_tools_model
+
+

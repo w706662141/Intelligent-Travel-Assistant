@@ -39,7 +39,7 @@ class AgentNodes:
                 self.model.ainvoke(
                     state['messages']
                 ),
-                timeout=60,
+                timeout=120,
             )
             elapsed = (
                     time.perf_counter() - start
