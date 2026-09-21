@@ -6,7 +6,8 @@ load_dotenv()
 _nvidia_model = None
 _agnes_model = None
 _agnes_tools_model = None
-
+# def get_agnes_model():
+# def get_nvidia_model():
 
 def get_nvidia_model():
     global _nvidia_model

@@ -1,6 +1,9 @@
+from langchain_core.messages import SystemMessage, HumanMessage
+
 from capabilities.subagents.trip_subagent.graph import (
     TripSubAgentGraph,
 )
+from capabilities.subagents.trip_subagent.prompts.prompt import TRIP_SUBAGENT_SYSTEM_PROMPT
 from capabilities.subagents.trip_subagent.schemas.request import TripPlanRequest
 from infrastructure.core.llm import get_agnes_model
 from schemas.trip_plan import TripPlan
@@ -82,8 +85,27 @@ class TripSubAgent:
         # Initial State
         # ==================================================
 
+        request_context = (
+            "\n\n【当前旅行请求】\n"
+            f"城市：{request.city}\n"
+            f"开始日期：{request.start_date}\n"
+            f"结束日期：{request.end_date}\n"
+            f"出行人数：{request.travelers}\n"
+            f"预算："
+            f"{request.budget if request.budget is not None else '未指定'}\n"
+            f"旅行偏好："
+            f"{', '.join(request.preferences) if request.preferences else '未指定'}"
+        )
+
         initial_state = {
-            "messages": [],
+            "messages": [
+                SystemMessage(
+                    content=TRIP_SUBAGENT_SYSTEM_PROMPT
+                ),
+                HumanMessage(
+                    content=request_context
+                )
+            ],
 
             # MainAgent → TripSubAgent
             "request": request,
@@ -107,17 +129,26 @@ class TripSubAgent:
             "resource_data": [],
 
             "final_result": None,
+
+            "llm_response": None,
         }
 
         # ==================================================
         # Execute Graph
         # ==================================================
         result = await self.graph.ainvoke(
-          initial_state
+            initial_state
         )
 
         status = result.get("status")
 
+        llm_response = result.get(
+            "llm_response"
+        )
+
+        final_result = result.get(
+            "final_result"
+        )
         print(
             "\n========================================"
         )
@@ -156,45 +187,130 @@ class TripSubAgent:
         if status == "failed":
             return {
                 "success": False,
-                "message": (
-                    "旅行规划过程中出现问题，"
-                    "暂时无法完成该任务。"
+
+                "status": "failed",
+
+                "llm_response": llm_response,
+
+                "trip_plan": None,
+
+                "error": result.get(
+                    "error"
                 ),
-                "error": result.get("error"),
+
+                "execution": {
+                    "iteration": result.get(
+                        "iteration",
+                        0,
+                    ),
+                    "tool_call_count": result.get(
+                        "tool_call_count",
+                        0,
+                    ),
+                    "tool_result_count": result.get(
+                        "tool_result_count",
+                        0,
+                    ),
+                },
             }
 
         if status == "max_iterations":
             return {
                 "success": False,
-                "message": (
-                    "旅行规划步骤过多，"
-                    "暂时无法完成该任务。"
-                ),
+
+                "status": "max_iterations",
+
+                "llm_response": llm_response,
+
+                "trip_plan": None,
+
                 "error": (
                     "TripSubAgent max iterations reached"
                 ),
+
+                "execution": {
+                    "iteration": result.get(
+                        "iteration",
+                        0,
+                    ),
+                    "tool_call_count": result.get(
+                        "tool_call_count",
+                        0,
+                    ),
+                    "tool_result_count": result.get(
+                        "tool_result_count",
+                        0,
+                    ),
+                },
             }
 
-        final_result = result.get(
-            "final_result"
-        )
+
+        # ==================================================
+        # 没有 Final Result
+        # ==================================================
 
         if final_result is None:
+
             return {
                 "success": False,
-                "message": "旅行规划未生成有效结果。",
-                "error": "EMPTY_FINAL_RESULT",
+
+                "status": "empty_result",
+
+                "llm_response": llm_response,
+
+                "trip_plan": None,
+
+                "error": (
+                    "TripSubAgent returned empty final result"
+                ),
+
+                "execution": {
+                    "iteration": result.get(
+                        "iteration",
+                        0,
+                    ),
+                    "tool_call_count": result.get(
+                        "tool_call_count",
+                        0,
+                    ),
+                    "tool_result_count": result.get(
+                        "tool_result_count",
+                        0,
+                    ),
+                },
             }
+
+        # ==================================================
+        # SUCCESS
+        # ==================================================
 
         return {
             "success": True,
-            "trip_plan": final_result.model_dump(),
-            "tool_call_count": result.get(
-                "tool_call_count",
-                0,
+
+            "status": "completed",
+
+            # TripSubAgent 最终 LLM 输出
+            "llm_response": llm_response,
+
+            # 结构化旅行方案
+            "trip_plan": (
+                final_result.model_dump()
             ),
-            "tool_result_count": result.get(
-                "tool_result_count",
-                0,
-            ),
+
+            "error": None,
+
+            "execution": {
+                "iteration": result.get(
+                    "iteration",
+                    0,
+                ),
+                "tool_call_count": result.get(
+                    "tool_call_count",
+                    0,
+                ),
+                "tool_result_count": result.get(
+                    "tool_result_count",
+                    0,
+                ),
+            },
         }

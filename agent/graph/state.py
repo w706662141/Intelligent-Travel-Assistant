@@ -12,6 +12,11 @@ class AgentStatus(str, Enum):
     FAILED = "failed"
 
     MAX_ITERATIONS = "max_iterations"
+    # TripSubAgent 已完成
+    SUBAGENT_COMPLETED = "subagent_completed"
+
+    # TripSubAgent 执行失败
+    SUBAGENT_FAILED = "subagent_failed"
 
 
 class AgentState(MessagesState):
@@ -37,3 +42,8 @@ class AgentState(MessagesState):
     trip_request: str | None
 
     trip_plan: object | None
+    # ==================================================
+    # TripSubAgent 透传结果
+    # ==================================================
+
+    subagent_result: dict | None

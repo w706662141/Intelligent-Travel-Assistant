@@ -1,8 +1,13 @@
 from langgraph.graph import END
 from agent.graph.state import AgentStatus
 
+TERMINAL_SUBAGENT_STATUSES = {
+    AgentStatus.SUBAGENT_COMPLETED,
+    AgentStatus.SUBAGENT_FAILED,
+}
+
 TERMINAL_TOOLS = {
-    "trip_plan",
+    "delegate_trip_task",
 }
 
 
@@ -22,6 +27,12 @@ def should_continue(state):
     status = state.get('status')
 
     if status in {
+        AgentStatus.SUBAGENT_COMPLETED,
+        AgentStatus.SUBAGENT_FAILED,
+    }:
+        return "passthrough"
+
+    if status in {
         AgentStatus.FAILED,
         AgentStatus.MAX_ITERATIONS,
         AgentStatus.COMPLETED
@@ -32,13 +43,6 @@ def should_continue(state):
         "executed_tool_names",
         []
     )
-
-    # trip_plan 是终止型 Tool
-    if any(
-            name in TERMINAL_TOOLS
-            for name in executed_tool_names
-    ):
-        return END
 
     last_message = state["messages"][-1]
 

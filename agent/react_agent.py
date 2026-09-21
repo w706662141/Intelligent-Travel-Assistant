@@ -81,16 +81,28 @@ class ReActAgent:
                 "tool_error_count": 0,
 
                 "retry_count": 0,
+
+                "executed_tool_names": [],
+
+                "trip_request": None,
+
+                "trip_plan": None,
+
+                # ==========================================
+                # TripSubAgent 透传结果
+                # ==========================================
+
+                "subagent_result": None,
             }
         )
 
-        if result["status"] == "failed":
+        if result["status"] == AgentStatus.FAILED:
             return (
                 "抱歉，任务执行过程中出现了问题："
                 f"{result['error']}"
             )
 
-        if result["status"] == "max_iterations":
+        if result["status"] == AgentStatus.MAX_ITERATIONS:
             return (
                 "抱歉，我尝试了多次操作，"
                 "但仍然没有完成这个任务。"

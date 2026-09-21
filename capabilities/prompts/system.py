@@ -165,16 +165,25 @@ Tool 选择必须遵循以下优先级：
 第二步：
 如果属于完整旅行规划：
 
-→ 只能调用 trip_plan。
+→ 只能调用 delegate_trip_task。
 
 禁止再调用：
 - search_attraction
 - search_hotels
 - query_weather
 - search_nearby_meals
-- route Tool
 
-trip_plan 是完整旅行规划的唯一入口。
+delegate_trip_task 是完整旅行规划的唯一入口。
+
+调用 delegate_trip_task 后：
+
+1. 等待 TripSubAgent 完整执行。
+2. 不再重新调用 MainAgent LLM。
+3. 不再调用其他旅行 Tool。
+4. 直接根据 delegate_trip_task 返回的 success/status 输出最终结果。
+5. delegate_trip_task 成功则透传 TripSubAgent 结果。
+6. delegate_trip_task 失败则透传失败状态和错误信息。
+7. 结束本次 MainAgent 执行。
 
 第三步：
 如果不属于完整旅行规划，

@@ -34,3 +34,6 @@ class TripSubAgentState(MessagesState):
     resource_data: list[dict]
 
     final_result: TripPlan | None
+
+    # TripSubAgent 最近一次 LLM 输出
+    llm_response: str | None

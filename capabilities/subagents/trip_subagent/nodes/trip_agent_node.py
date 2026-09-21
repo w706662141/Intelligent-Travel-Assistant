@@ -1,15 +1,9 @@
 import asyncio
 import traceback
 
-from langchain_core.messages import SystemMessage, HumanMessage
-
 from capabilities.subagents.trip_subagent.state import (
     TripSubAgentState,
 )
-from capabilities.subagents.trip_subagent.prompts.prompt import (
-    TRIP_SUBAGENT_SYSTEM_PROMPT,
-)
-
 
 class TripAgentNodes:
 
@@ -44,32 +38,7 @@ class TripAgentNodes:
 
         request = state["request"]
 
-        request_context = (
-            "\n\n【当前旅行请求】\n"
-            f"城市：{request.city}\n"
-            f"开始日期：{request.start_date}\n"
-            f"结束日期：{request.end_date}\n"
-            f"出行人数：{request.travelers}\n"
-            f"预算："
-            f"{request.budget if request.budget is not None else '未指定'}\n"
-            f"旅行偏好："
-            f"{', '.join(request.preferences) if request.preferences else '未指定'}"
-        )
-
         messages = state["messages"]
-
-        # 第一轮没有 SystemMessage 时加入系统提示
-        if not messages:
-            messages = [
-                SystemMessage(
-                    content=(
-                        TRIP_SUBAGENT_SYSTEM_PROMPT
-                    )
-                ),
-                HumanMessage(
-                    content=request_context
-                )
-            ]
 
         try:
 
@@ -100,6 +69,17 @@ class TripAgentNodes:
                 [],
             )
 
+            # ==================================================
+            # 保存 LLM Response
+            # ==================================================
+
+            response_content = response.content
+
+            if isinstance(response_content, str):
+                llm_response = response_content
+            else:
+                llm_response = str(response_content)
+
             print(
                 "\n[TripSubAgent] LLM Response:"
             )
@@ -120,6 +100,8 @@ class TripAgentNodes:
                     state["tool_call_count"]
                     + len(tool_calls)
                 ),
+                # 最新一次 LLM 输出
+                "llm_response": llm_response,
             }
 
         except Exception as exc:
