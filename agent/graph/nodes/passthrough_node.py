@@ -1,5 +1,3 @@
-import json
-
 from langchain_core.messages import AIMessage
 
 from agent.graph.state import AgentStatus
@@ -9,17 +7,21 @@ class MainAgentPassthroughNode:
     """
     MainAgent → TripSubAgent 透传节点。
 
-    不调用 LLM。
+    注意：
+
+    这里绝对不调用 LLM。
 
     TripSubAgent 已经完成：
+
         Tool Calling
         Resource Collection
         TripPlan Generation
+        Final Response Generation
 
     MainAgent 这里只负责：
-        读取结果
-        判断状态
-        输出最终结果
+
+        读取 final_response
+        透传给用户
     """
 
     async def passthrough(
@@ -37,10 +39,19 @@ class MainAgentPassthroughNode:
             "=========="
         )
 
+        # ==================================================
+        # 没有 SubAgent Result
+        # ==================================================
+
         if not result:
 
             message = (
                 "旅行规划没有返回有效结果。"
+            )
+
+            print(
+                "[MainAgent Passthrough] "
+                "EMPTY_SUBAGENT_RESULT"
             )
 
             return {
@@ -68,16 +79,16 @@ class MainAgentPassthroughNode:
             "status"
         )
 
-        llm_response = result.get(
-            "llm_response"
-        )
-
-        error = result.get(
-            "error"
+        final_response = result.get(
+            "final_response"
         )
 
         trip_plan = result.get(
             "trip_plan"
+        )
+
+        error = result.get(
+            "error"
         )
 
         print(
@@ -93,11 +104,11 @@ class MainAgentPassthroughNode:
         )
 
         print(
-            "llm_response="
+            "final_response="
         )
 
         print(
-            llm_response
+            final_response
         )
 
         # ==================================================
@@ -106,35 +117,16 @@ class MainAgentPassthroughNode:
 
         if success:
 
-            # ------------------------------------------------
-            # 这里不再调用 LLM
-            #
-            # 直接把 TripSubAgent 的结构化结果
-            # 透传给最终用户。
-            # ------------------------------------------------
-
-            content = json.dumps(
-                {
-                    "status": status,
-
-                    "message": (
-                        llm_response
-                        or "旅行规划已完成。"
-                    ),
-
-                    "trip_plan": trip_plan,
-
-                    "execution": (
-                        result.get(
-                            "execution"
-                        )
-                    ),
-                },
-                ensure_ascii=False,
-                indent=2,
+            content = (
+                final_response
+                or "旅行规划已完成。"
             )
 
             return {
+                # ==========================================
+                # 唯一面向用户的输出
+                # ==========================================
+
                 "messages": [
                     AIMessage(
                         content=content
@@ -145,6 +137,12 @@ class MainAgentPassthroughNode:
                     AgentStatus.COMPLETED
                 ),
 
+                # ==========================================
+                # 结构化数据继续保留在 State
+                #
+                # 但不再输出给用户
+                # ==========================================
+
                 "trip_plan": trip_plan,
 
                 "error": None,
@@ -154,29 +152,10 @@ class MainAgentPassthroughNode:
         # FAILED
         # ==================================================
 
-        content = json.dumps(
-            {
-                "status": status,
-
-                "message": (
-                    "旅行规划执行失败，"
-                    "无法可靠完成本次旅行规划。"
-                ),
-
-                "llm_response": (
-                    llm_response
-                ),
-
-                "error": error,
-
-                "execution": (
-                    result.get(
-                        "execution"
-                    )
-                ),
-            },
-            ensure_ascii=False,
-            indent=2,
+        content = (
+            final_response
+            or "旅行规划执行失败，"
+               "无法可靠完成本次旅行规划。"
         )
 
         return {
@@ -189,6 +168,8 @@ class MainAgentPassthroughNode:
             "status": (
                 AgentStatus.COMPLETED
             ),
+
+            "trip_plan": trip_plan,
 
             "error": error,
         }

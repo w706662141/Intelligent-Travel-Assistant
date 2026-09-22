@@ -35,5 +35,5 @@ class TripSubAgentState(MessagesState):
 
     final_result: TripPlan | None
 
-    # TripSubAgent 最近一次 LLM 输出
-    llm_response: str | None
+    # 最终给 MainAgent Passthrough 的用户可读回答
+    final_response: str | None

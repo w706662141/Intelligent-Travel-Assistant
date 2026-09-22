@@ -36,8 +36,6 @@ class TripAgentNodes:
                 ),
             }
 
-        request = state["request"]
-
         messages = state["messages"]
 
         try:
@@ -69,16 +67,6 @@ class TripAgentNodes:
                 [],
             )
 
-            # ==================================================
-            # 保存 LLM Response
-            # ==================================================
-
-            response_content = response.content
-
-            if isinstance(response_content, str):
-                llm_response = response_content
-            else:
-                llm_response = str(response_content)
 
             print(
                 "\n[TripSubAgent] LLM Response:"
@@ -95,13 +83,13 @@ class TripAgentNodes:
 
             return {
                 "messages": [response],
+
                 "iteration": iteration,
+
                 "tool_call_count": (
-                    state["tool_call_count"]
-                    + len(tool_calls)
+                        state["tool_call_count"]
+                        + len(tool_calls)
                 ),
-                # 最新一次 LLM 输出
-                "llm_response": llm_response,
             }
 
         except Exception as exc:
@@ -116,7 +104,9 @@ class TripAgentNodes:
 
             return {
                 "iteration": iteration,
+
                 "status": "failed",
+
                 "error": (
                     "TripSubAgent LLM execution failed: "
                     f"{exc}"

@@ -53,7 +53,6 @@ def should_continue(state):
 
 
 def route_after_tools(state):
-
     executed_tool_names = state.get(
         "executed_tool_names",
         []
@@ -64,8 +63,8 @@ def route_after_tools(state):
     # =========================================
 
     if any(
-        name in TERMINAL_TOOLS
-        for name in executed_tool_names
+            name in TERMINAL_TOOLS
+            for name in executed_tool_names
     ):
         return END
 

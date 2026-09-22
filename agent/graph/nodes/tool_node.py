@@ -4,9 +4,10 @@ from agent.graph.state import AgentStatus
 
 
 class ToolNodes:
+
     def __init__(
-            self,
-            tool_executor
+        self,
+        tool_executor,
     ):
         self.tool_executor = tool_executor
 
@@ -19,6 +20,7 @@ class ToolNodes:
             return None
 
         try:
+
             result = ast.literal_eval(
                 content
             )
@@ -30,12 +32,13 @@ class ToolNodes:
             pass
 
         return None
+
     async def execute(
-            self,
-            state
+        self,
+        state,
     ):
 
-        last_message = state['messages'][-1]
+        last_message = state["messages"][-1]
 
         tool_messages = []
 
@@ -56,17 +59,24 @@ class ToolNodes:
 
             tool_name = tool_call["name"]
 
-            executed_tool_names.append(tool_name)
+            executed_tool_names.append(
+                tool_name
+            )
 
             print("\nTool Call:")
             print(tool_call)
 
             try:
+
                 tool_message = (
-                    await self.tool_executor.execute(tool_call)
+                    await self.tool_executor.execute(
+                        tool_call
+                    )
                 )
 
-                tool_messages.append(tool_message)
+                tool_messages.append(
+                    tool_message
+                )
 
                 print("\nTool Result:")
                 print(tool_message)
@@ -91,9 +101,17 @@ class ToolNodes:
 
                         subagent_result = {
                             "success": False,
+
                             "status": "invalid_result",
-                            "llm_response": None,
+
+                            "final_response": (
+                                "旅行规划子代理返回了"
+                                "无效结果，"
+                                "无法完成本次旅行规划。"
+                            ),
+
                             "trip_plan": None,
+
                             "error": (
                                 "delegate_trip_task "
                                 "returned an invalid result"
@@ -114,23 +132,30 @@ class ToolNodes:
                         )
 
                         if success:
+
                             status = (
                                 AgentStatus.SUBAGENT_COMPLETED
                             )
+
                         else:
+
                             status = (
                                 AgentStatus.SUBAGENT_FAILED
                             )
+
             except Exception as e:
+
                 print(
                     "Tool execution failed: %s",
                     tool_name,
                 )
+
                 return {
                     "status": AgentStatus.FAILED,
+
                     "error": (
                         f"Tool execution failed: {e}"
-                    )
+                    ),
                 }
 
         return {
@@ -142,10 +167,10 @@ class ToolNodes:
             ),
 
             "tool_result_count": (
-                    state[
-                        "tool_result_count"
-                    ]
-                    + len(tool_messages)
+                state[
+                    "tool_result_count"
+                ]
+                + len(tool_messages)
             ),
 
             "status": status,

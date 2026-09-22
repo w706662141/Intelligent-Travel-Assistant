@@ -1,36 +1,55 @@
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.messages import (
+    SystemMessage,
+    HumanMessage,
+)
 
 from capabilities.subagents.trip_subagent.graph import (
     TripSubAgentGraph,
 )
-from capabilities.subagents.trip_subagent.prompts.prompt import TRIP_SUBAGENT_SYSTEM_PROMPT
-from capabilities.subagents.trip_subagent.schemas.request import TripPlanRequest
-from infrastructure.core.llm import get_agnes_model
+
+from capabilities.subagents.trip_subagent.prompts.prompt import (
+    TRIP_SUBAGENT_SYSTEM_PROMPT,
+)
+
+from capabilities.subagents.trip_subagent.schemas.request import (
+    TripPlanRequest,
+)
+
+from infrastructure.core.llm import (
+    get_agnes_model,
+)
+
 from schemas.trip_plan import TripPlan
 
 
 class TripSubAgent:
 
     def __init__(
-            self,
-            tools,
-            max_iterations: int = 15,
-            agent_llm_timeout: int = 120,
-            finalizer_llm_timeout: int = 120,
+        self,
+        tools,
+        max_iterations: int = 15,
+        agent_llm_timeout: int = 120,
+        finalizer_llm_timeout: int = 120,
     ):
         self.tools = tools
         self.max_iterations = max_iterations
 
         base_model = get_agnes_model()
 
-        # Agent 模型：
-        # 具备 Tool Calling 能力
+        # ==================================================
+        # Agent Model
+        # ==================================================
+
         self.model = base_model.bind_tools(
             tools
         )
 
-        # Finalizer 模型：
+        # ==================================================
+        # Finalizer Model
+        #
         # 只负责生成结构化 TripPlan
+        # ==================================================
+
         self.finalizer_model = (
             base_model.with_structured_output(
                 TripPlan
@@ -47,8 +66,8 @@ class TripSubAgent:
         ).build()
 
     async def run(
-            self,
-            request: TripPlanRequest,
+        self,
+        request: TripPlanRequest,
     ) -> dict:
 
         print(
@@ -57,6 +76,7 @@ class TripSubAgent:
             "TripSubAgent START\n"
             "========================================"
         )
+
         print(
             f"city={request.city}"
         )
@@ -104,10 +124,9 @@ class TripSubAgent:
                 ),
                 HumanMessage(
                     content=request_context
-                )
+                ),
             ],
 
-            # MainAgent → TripSubAgent
             "request": request,
 
             "iteration": 0,
@@ -124,31 +143,33 @@ class TripSubAgent:
 
             "tool_result_count": 0,
 
-            # 非常重要：
-            # Finalizer 的唯一资源数据来源
             "resource_data": [],
 
             "final_result": None,
 
-            "llm_response": None,
+            "final_response": None,
         }
 
         # ==================================================
         # Execute Graph
         # ==================================================
+
         result = await self.graph.ainvoke(
             initial_state
         )
 
-        status = result.get("status")
-
-        llm_response = result.get(
-            "llm_response"
+        status = result.get(
+            "status"
         )
 
         final_result = result.get(
             "final_result"
         )
+
+        final_response = result.get(
+            "final_response"
+        )
+
         print(
             "\n========================================"
         )
@@ -181,32 +202,41 @@ class TripSubAgent:
         )
 
         # ==================================================
-        # Failed
+        # FAILED
         # ==================================================
 
         if status == "failed":
+
+            error = result.get(
+                "error"
+            )
+
             return {
                 "success": False,
 
                 "status": "failed",
 
-                "llm_response": llm_response,
+                "final_response": (
+                    final_response
+                    or "旅行规划执行失败，"
+                       "暂时无法可靠完成本次旅行规划。"
+                ),
 
                 "trip_plan": None,
 
-                "error": result.get(
-                    "error"
-                ),
+                "error": error,
 
                 "execution": {
                     "iteration": result.get(
                         "iteration",
                         0,
                     ),
+
                     "tool_call_count": result.get(
                         "tool_call_count",
                         0,
                     ),
+
                     "tool_result_count": result.get(
                         "tool_result_count",
                         0,
@@ -214,29 +244,41 @@ class TripSubAgent:
                 },
             }
 
+        # ==================================================
+        # MAX ITERATIONS
+        # ==================================================
+
         if status == "max_iterations":
+
+            error = (
+                "TripSubAgent max iterations reached"
+            )
+
             return {
                 "success": False,
 
                 "status": "max_iterations",
 
-                "llm_response": llm_response,
+                "final_response": (
+                    "旅行规划执行次数达到上限，"
+                    "未能可靠完成本次旅行规划。"
+                ),
 
                 "trip_plan": None,
 
-                "error": (
-                    "TripSubAgent max iterations reached"
-                ),
+                "error": error,
 
                 "execution": {
                     "iteration": result.get(
                         "iteration",
                         0,
                     ),
+
                     "tool_call_count": result.get(
                         "tool_call_count",
                         0,
                     ),
+
                     "tool_result_count": result.get(
                         "tool_result_count",
                         0,
@@ -244,41 +286,59 @@ class TripSubAgent:
                 },
             }
 
-
         # ==================================================
-        # 没有 Final Result
+        # EMPTY RESULT
         # ==================================================
 
         if final_result is None:
+
+            error = (
+                "TripSubAgent returned "
+                "empty final result"
+            )
 
             return {
                 "success": False,
 
                 "status": "empty_result",
 
-                "llm_response": llm_response,
+                "final_response": (
+                    "旅行规划没有生成有效结果，"
+                    "暂时无法完成本次旅行规划。"
+                ),
 
                 "trip_plan": None,
 
-                "error": (
-                    "TripSubAgent returned empty final result"
-                ),
+                "error": error,
 
                 "execution": {
                     "iteration": result.get(
                         "iteration",
                         0,
                     ),
+
                     "tool_call_count": result.get(
                         "tool_call_count",
                         0,
                     ),
+
                     "tool_result_count": result.get(
                         "tool_result_count",
                         0,
                     ),
                 },
             }
+
+        # ==================================================
+        # EMPTY FINAL RESPONSE
+        # ==================================================
+
+        if not final_response:
+
+            final_response = (
+                "旅行规划已经生成，"
+                "但最终用户展示内容生成失败。"
+            )
 
         # ==================================================
         # SUCCESS
@@ -289,10 +349,16 @@ class TripSubAgent:
 
             "status": "completed",
 
-            # TripSubAgent 最终 LLM 输出
-            "llm_response": llm_response,
+            # ==============================================
+            # 真正给 MainAgent Passthrough 的最终回答
+            # ==============================================
 
-            # 结构化旅行方案
+            "final_response": final_response,
+
+            # ==============================================
+            # 内部结构化数据
+            # ==============================================
+
             "trip_plan": (
                 final_result.model_dump()
             ),
@@ -304,10 +370,12 @@ class TripSubAgent:
                     "iteration",
                     0,
                 ),
+
                 "tool_call_count": result.get(
                     "tool_call_count",
                     0,
                 ),
+
                 "tool_result_count": result.get(
                     "tool_result_count",
                     0,
