@@ -12,42 +12,96 @@ TERMINAL_TOOLS = {
 
 
 def should_continue(state):
+
     print(
-        "\n[ROUTER]",
-        "status=", state.get("status"),
-        "executed_tool_names=", state.get("executed_tool_names"),
-        "last_message=", type(state["messages"][-1]).__name__,
-        "tool_calls=", getattr(
-            state["messages"][-1],
-            "tool_calls",
-            None
+        "\n[ROUTER]"
+    )
+
+    print(
+        "status=",
+        state.get("status"),
+    )
+
+    print(
+        "executed_tool_names=",
+        state.get(
+            "executed_tool_names"
         ),
     )
 
-    status = state.get('status')
+    messages = state.get(
+        "messages",
+        [],
+    )
 
-    if status in {
-        AgentStatus.SUBAGENT_COMPLETED,
-        AgentStatus.SUBAGENT_FAILED,
-    }:
+    if not messages:
+        return END
+
+    last_message = messages[-1]
+
+    print(
+        "last_message=",
+        type(last_message).__name__,
+    )
+
+    print(
+        "tool_calls=",
+        getattr(
+            last_message,
+            "tool_calls",
+            None,
+        ),
+    )
+
+    status = state.get(
+        "status"
+    )
+
+    # ==========================================
+    # TripSubAgent 已经完成
+    # ==========================================
+
+    if status == (
+        AgentStatus.SUBAGENT_COMPLETED
+    ):
         return "passthrough"
+
+    # ==========================================
+    # TripSubAgent 执行失败
+    # ==========================================
+
+    if status == (
+        AgentStatus.SUBAGENT_FAILED
+    ):
+        return "passthrough"
+
+    # ==========================================
+    # MainAgent 自身失败
+    # ==========================================
 
     if status in {
         AgentStatus.FAILED,
         AgentStatus.MAX_ITERATIONS,
-        AgentStatus.COMPLETED
+        AgentStatus.COMPLETED,
     }:
         return END
 
-    executed_tool_names = state.get(
-        "executed_tool_names",
-        []
+    # ==========================================
+    # MainAgent Tool Calling
+    # ==========================================
+
+    tool_calls = getattr(
+        last_message,
+        "tool_calls",
+        [],
     )
 
-    last_message = state["messages"][-1]
-
-    if last_message.tool_calls:
+    if tool_calls:
         return "tools"
+
+    # ==========================================
+    # 普通对话直接结束
+    # ==========================================
 
     return END
 

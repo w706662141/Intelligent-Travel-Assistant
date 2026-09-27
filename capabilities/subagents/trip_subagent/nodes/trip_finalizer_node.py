@@ -29,11 +29,6 @@ class TripFinalizerNode:
         self,
         state: TripSubAgentState,
     ):
-        print(
-            "\n========== "
-            "TripSubAgent Finalizer "
-            "=========="
-        )
 
         messages = state.get(
             "messages",
@@ -119,10 +114,6 @@ class TripFinalizerNode:
                 "final_response": None,
             }
 
-        print(
-            "\n[TripSubAgent] LLM Response:"
-        )
-        print(content)
 
         return {
             "status": "completed",

@@ -48,14 +48,14 @@ class TripAgentNodes:
                 f"message_count={len(messages)}"
             )
 
-            for i, message in enumerate(messages):
-                print(
-                    f"[TripSubAgent] "
-                    f"message[{i}] "
-                    f"type={type(message).__name__} "
-                    f"content_length="
-                    f"{len(str(message.content))}"
-                )
+            # for i, message in enumerate(messages):
+            #     print(
+            #         f"[TripSubAgent] "
+            #         f"message[{i}] "
+            #         f"type={type(message).__name__} "
+            #         f"content_length="
+            #         f"{len(str(message.content))}"
+            #     )
 
             response = await asyncio.wait_for(
                 self.model.ainvoke(messages),

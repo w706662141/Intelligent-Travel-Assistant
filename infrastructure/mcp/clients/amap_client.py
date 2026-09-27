@@ -80,17 +80,7 @@ class AmapMCPClient:
         调用指定 MCP Tool
         """
 
-        print(
-            f"[MCP CALL START] "
-            f"name={name}, "
-            f"arguments={arguments}"
-        )
         tool = self.get_tool(name)
         result = await tool.ainvoke(arguments)
-
-        print(
-            f"[MCP CALL END] "
-            f"name={name}"
-        )
 
         return result

@@ -1,22 +1,25 @@
 from langchain_core.tools import tool
 
-from capabilities.subagents.trip_subagent.schemas.request import TripPlanRequest
+from capabilities.subagents.trip_subagent.schemas.request import (
+    TripPlanRequest,
+)
 
 
 def create_trip_subagent_tool(
-        trip_subagent,
+    trip_subagent,
 ):
+
     @tool(
         "delegate_trip_task",
         args_schema=TripPlanRequest,
     )
     async def delegate_trip_task(
-            city: str,
-            start_date: str,
-            end_date: str,
-            travelers: int = 1,
-            budget: int | None = None,
-            preferences: list[str] | None = None,
+        city: str,
+        start_date: str,
+        end_date: str,
+        travelers: int = 1,
+        budget: int | None = None,
+        preferences: list[str] | None = None,
     ):
         """
         将复杂旅行规划任务交给 TripSubAgent。
@@ -47,8 +50,28 @@ def create_trip_subagent_tool(
             preferences=preferences or [],
         )
 
-        return await trip_subagent.run(
+        print(
+            "\n========== "
+            "delegate_trip_task "
+            "=========="
+        )
+
+        print(
+            "[delegate_trip_task] "
+            f"request={request}"
+        )
+
+        result = await trip_subagent.run(
             request
         )
+
+        print(
+            "\n[delegate_trip_task] "
+            "TripSubAgent result:"
+        )
+
+        print(result)
+
+        return result
 
     return delegate_trip_task
