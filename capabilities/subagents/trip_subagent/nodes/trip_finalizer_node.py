@@ -77,23 +77,6 @@ class TripFinalizerNode:
                 ),
             }
 
-        # 从后往前找最后一条 AIMessage
-
-
-        for message in reversed(messages):
-
-            if message.__class__.__name__ == "AIMessage":
-                final_message = message
-                break
-
-        if final_message is None:
-            return {
-                "status": "failed",
-                "error": (
-                    "TripSubAgent 没有产生最终 LLM 响应"
-                ),
-                "final_response": None,
-            }
 
         content = final_message.content
 

@@ -184,16 +184,6 @@ class ReActAgent:
                 "但仍然没有完成这个任务。"
             )
 
-        # ==========================================
-        # 最终消息
-        #
-        # 对 TripSubAgent 来说：
-        #
-        # messages[-1]
-        #
-        # 就是 Passthrough 生成的 AIMessage
-        # ==========================================
-
         messages = result.get(
             "messages",
             [],

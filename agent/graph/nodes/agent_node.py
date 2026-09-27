@@ -51,9 +51,6 @@ class AgentNodes:
                 f"({elapsed:.2f}s)"
             )
 
-            print("\nLLM Response:")
-            print(response)
-
             tool_call_count = (
                     state["tool_call_count"]
                     + len(response.tool_calls)
