@@ -50,10 +50,7 @@ class TripSubAgentGraph:
         )
 
         self.finalizer_node = (
-            TripFinalizerNode(
-                model=finalizer_model,
-                llm_timeout=finalizer_llm_timeout,
-            )
+            TripFinalizerNode()
         )
 
     def build(self):

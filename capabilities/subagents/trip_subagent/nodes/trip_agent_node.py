@@ -5,15 +5,18 @@ from capabilities.subagents.trip_subagent.state import (
     TripSubAgentState,
 )
 
+
 class TripAgentNodes:
 
     def __init__(
         self,
         model,
         max_iterations: int = 15,
+        llm_timeout: int = 120,
     ):
         self.model = model
         self.max_iterations = max_iterations
+        self.llm_timeout = llm_timeout
 
     async def agent_node(
         self,
@@ -39,10 +42,9 @@ class TripAgentNodes:
         messages = state["messages"]
 
         try:
-
             print(
                 f"[TripSubAgent] "
-                f"Iteration {iteration}, "
+                f"Iteration={iteration}, "
                 f"message_count={len(messages)}"
             )
 
@@ -51,14 +53,13 @@ class TripAgentNodes:
                     f"[TripSubAgent] "
                     f"message[{i}] "
                     f"type={type(message).__name__} "
-                    f"content_length={len(str(message.content))}"
+                    f"content_length="
+                    f"{len(str(message.content))}"
                 )
 
             response = await asyncio.wait_for(
-                self.model.ainvoke(
-                    messages
-                ),
-                timeout=120,
+                self.model.ainvoke(messages),
+                timeout=self.llm_timeout,
             )
 
             tool_calls = getattr(
@@ -67,10 +68,10 @@ class TripAgentNodes:
                 [],
             )
 
-
             print(
                 "\n[TripSubAgent] LLM Response:"
             )
+
             print(response)
 
             if tool_calls:
@@ -81,14 +82,43 @@ class TripAgentNodes:
                 for call in tool_calls:
                     print(call)
 
+            else:
+                print(
+                    "\n[TripSubAgent] "
+                    "No more tool calls."
+                )
+
+                print(
+                    "[TripSubAgent] "
+                    "This AIMessage is the final response."
+                )
+
             return {
                 "messages": [response],
 
                 "iteration": iteration,
 
                 "tool_call_count": (
-                        state["tool_call_count"]
-                        + len(tool_calls)
+                    state["tool_call_count"]
+                    + len(tool_calls)
+                ),
+            }
+
+        except asyncio.TimeoutError:
+
+            print(
+                "\n========== "
+                "TripSubAgent LLM TIMEOUT "
+                "=========="
+            )
+
+            return {
+                "iteration": iteration,
+                "status": "failed",
+                "error": (
+                    "TripSubAgent LLM timeout: "
+                    f"no response within "
+                    f"{self.llm_timeout} seconds"
                 ),
             }
 

@@ -33,7 +33,5 @@ class TripSubAgentState(MessagesState):
 
     resource_data: list[dict]
 
-    final_result: TripPlan | None
-
-    # 最终给 MainAgent Passthrough 的用户可读回答
+    # TripSubAgent 最终自然语言回答
     final_response: str | None

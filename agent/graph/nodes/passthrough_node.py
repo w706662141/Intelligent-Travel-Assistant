@@ -1,79 +1,32 @@
 from langchain_core.messages import AIMessage
 
-from agent.graph.state import AgentStatus
-
 
 class MainAgentPassthroughNode:
-    """
-    MainAgent → TripSubAgent 透传节点。
-
-    注意：
-
-    这里绝对不调用 LLM。
-
-    TripSubAgent 已经完成：
-
-        Tool Calling
-        Resource Collection
-        TripPlan Generation
-        Final Response Generation
-
-    MainAgent 这里只负责：
-
-        读取 final_response
-        透传给用户
-    """
 
     async def passthrough(
         self,
         state,
     ):
-
-        result = state.get(
-            "subagent_result"
-        )
-
         print(
             "\n========== "
             "MainAgent Passthrough "
             "=========="
         )
 
-        # ==================================================
-        # 没有 SubAgent Result
-        # ==================================================
+        result = state.get(
+            "subagent_result"
+        )
 
         if not result:
-
-            message = (
-                "旅行规划没有返回有效结果。"
-            )
-
-            print(
-                "[MainAgent Passthrough] "
-                "EMPTY_SUBAGENT_RESULT"
-            )
-
             return {
                 "messages": [
                     AIMessage(
-                        content=message
+                        content=(
+                            "旅行规划子代理没有返回有效结果。"
+                        )
                     )
-                ],
-
-                "status": (
-                    AgentStatus.SUBAGENT_FAILED
-                ),
-
-                "error": (
-                    "EMPTY_SUBAGENT_RESULT"
-                ),
+                ]
             }
-
-        success = result.get(
-            "success",
-            False,
-        )
 
         status = result.get(
             "status"
@@ -83,93 +36,98 @@ class MainAgentPassthroughNode:
             "final_response"
         )
 
-        trip_plan = result.get(
-            "trip_plan"
-        )
-
         error = result.get(
             "error"
         )
 
         print(
-            "[MainAgent Passthrough]"
+            f"[MainAgent] "
+            f"TripSubAgent status={status}"
         )
 
         print(
-            f"success={success}"
+            "[MainAgent] "
+            "TripSubAgent response:"
         )
 
-        print(
-            f"status={status}"
-        )
+        print(final_response)
 
-        print(
-            "final_response="
-        )
+        # ==========================================
+        # TripSubAgent 已经完成
+        # ==========================================
 
-        print(
-            final_response
-        )
-
-        # ==================================================
-        # SUCCESS
-        # ==================================================
-
-        if success:
-
-            content = (
-                final_response
-                or "旅行规划已完成。"
-            )
+        if status == "completed":
 
             return {
-                # ==========================================
-                # 唯一面向用户的输出
-                # ==========================================
-
                 "messages": [
                     AIMessage(
-                        content=content
+                        content=final_response
                     )
                 ],
-
-                "status": (
-                    AgentStatus.COMPLETED
-                ),
-
-                # ==========================================
-                # 结构化数据继续保留在 State
-                #
-                # 但不再输出给用户
-                # ==========================================
-
-                "trip_plan": trip_plan,
 
                 "error": None,
             }
 
-        # ==================================================
-        # FAILED
-        # ==================================================
+        # ==========================================
+        # TripSubAgent 执行失败
+        # ==========================================
 
-        content = (
-            final_response
-            or "旅行规划执行失败，"
-               "无法可靠完成本次旅行规划。"
-        )
+        if status == "failed":
+
+            return {
+                "messages": [
+                    AIMessage(
+                        content=(
+                            final_response
+                            or (
+                                "旅行规划执行失败："
+                                f"{error}"
+                            )
+                        )
+                    )
+                ],
+
+                "error": error,
+            }
+
+        # ==========================================
+        # 达到最大迭代
+        # ==========================================
+
+        if status == "max_iterations":
+
+            return {
+                "messages": [
+                    AIMessage(
+                        content=(
+                            final_response
+                            or (
+                                "旅行规划执行次数"
+                                "达到上限。"
+                            )
+                        )
+                    )
+                ],
+
+                "error": error,
+            }
+
+        # ==========================================
+        # 其他状态
+        # ==========================================
 
         return {
             "messages": [
                 AIMessage(
-                    content=content
+                    content=(
+                        final_response
+                        or (
+                            "旅行规划任务执行结束，"
+                            "但没有生成有效结果。"
+                        )
+                    )
                 )
             ],
-
-            "status": (
-                AgentStatus.COMPLETED
-            ),
-
-            "trip_plan": trip_plan,
 
             "error": error,
         }

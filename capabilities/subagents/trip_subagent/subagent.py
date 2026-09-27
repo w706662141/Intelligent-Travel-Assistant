@@ -346,36 +346,25 @@ class TripSubAgent:
 
         return {
             "success": True,
-
-            "status": "completed",
-
-            # ==============================================
-            # 真正给 MainAgent Passthrough 的最终回答
-            # ==============================================
-
-            "final_response": final_response,
-
-            # ==============================================
-            # 内部结构化数据
-            # ==============================================
-
-            "trip_plan": (
-                final_result.model_dump()
+            "status": result.get(
+                "status",
+                "completed"
             ),
-
-            "error": None,
-
+            "final_response": result.get(
+                "final_response"
+            ),
+            "error": result.get(
+                "error"
+            ),
             "execution": {
                 "iteration": result.get(
                     "iteration",
                     0,
                 ),
-
                 "tool_call_count": result.get(
                     "tool_call_count",
                     0,
                 ),
-
                 "tool_result_count": result.get(
                     "tool_result_count",
                     0,
