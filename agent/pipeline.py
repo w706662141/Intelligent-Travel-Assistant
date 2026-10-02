@@ -24,5 +24,4 @@ agent = ReActAgent(model, tool_registry, tool_executor)
 #                             # '推荐一下景点附近的餐厅'
 #             )))
 # asyncio.run(agent.run('2026年9月29日到30日我要去南京玩，帮我完整规划一下。'))
-print(asyncio.run(agent.run('龙门石窟附近有哪些餐厅。')))
-
+print(asyncio.run(agent.run('美国的首都')))

@@ -24,17 +24,24 @@ from agent.graph.state import (
     AgentState,
     AgentStatus,
 )
+from capabilities.prompts.system import (
+    TRAVEL_AGENT_SYSTEM_PROMPT,
+)
 
 
 class TravelAgentGraph:
 
     def __init__(
-        self,
-        model,
-        tool_executor,
+            self,
+            model,
+            tool_executor,
+            checkpointer=None,
     ):
         self.agent_nodes = (
-            AgentNodes(model)
+            AgentNodes(
+                model,
+                system_prompt=TRAVEL_AGENT_SYSTEM_PROMPT
+            )
         )
 
         self.tool_nodes = (
@@ -45,8 +52,9 @@ class TravelAgentGraph:
             MainAgentPassthroughNode()
         )
 
-    def build(self):
+        self.checkpointer = checkpointer
 
+    def build(self):
         graph = StateGraph(
             AgentState
         )
@@ -110,10 +118,10 @@ class TravelAgentGraph:
                 "passthrough"
 
                 if state.get("status")
-                in {
-                    AgentStatus.SUBAGENT_COMPLETED,
-                    AgentStatus.SUBAGENT_FAILED,
-                }
+                   in {
+                       AgentStatus.SUBAGENT_COMPLETED,
+                       AgentStatus.SUBAGENT_FAILED,
+                   }
 
                 else "agent"
             ),
@@ -136,4 +144,6 @@ class TravelAgentGraph:
             END,
         )
 
-        return graph.compile()
+        return graph.compile(
+            checkpointer=self.checkpointer
+        )

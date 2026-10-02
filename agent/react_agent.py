@@ -1,4 +1,3 @@
-
 from langchain_core.messages import (
     SystemMessage,
     HumanMessage,
@@ -24,7 +23,6 @@ from capabilities.tools.manager.tool_registry import (
 
 
 class ReActAgent:
-
     MAIN_TOOL_NAMES = [
 
         # ==========================================
@@ -40,6 +38,8 @@ class ReActAgent:
         "search_attraction",
 
         "search_hotels",
+
+        "search_hotels_near_place",
 
         "search_nearby_meals",
 
@@ -59,11 +59,12 @@ class ReActAgent:
     ]
 
     def __init__(
-        self,
-        model: ChatOpenAI,
-        tool_registry: ToolRegistry,
-        tool_executor,
-        max_iterations: int = 10,
+            self,
+            model: ChatOpenAI,
+            tool_registry: ToolRegistry,
+            tool_executor,
+            checkpointer=None,
+            max_iterations: int = 10,
     ):
 
         self.tool_registry = (
@@ -104,81 +105,117 @@ class ReActAgent:
             TravelAgentGraph(
                 model=self.model,
                 tool_executor=self.tool_executor,
+                checkpointer=(checkpointer),
             ).build()
         )
 
     async def run(
-        self,
-        user_input: str,
+            self,
+            user_input: str,
+            thread_id: str,
     ):
 
-        result = await self.graph.ainvoke(
-            {
-                "messages": [
-                    SystemMessage(
-                        content=(
-                            TRAVEL_AGENT_SYSTEM_PROMPT
-                        )
-                    ),
+        if not thread_id:
+            raise ValueError(
+                "thread_id 不能为空"
+            )
 
-                    HumanMessage(
-                        content=user_input
-                    ),
-                ],
-
-                "iteration": 0,
-
-                "max_iterations": (
-                    self.max_iterations
-                ),
-
-                "status": (
-                    AgentStatus.RUNNING
-                ),
-
-                "error": None,
-
-                "tool_call_count": 0,
-
-                "tool_result_count": 0,
-
-                "tool_error_count": 0,
-
-                "retry_count": 0,
-
-                "executed_tool_names": [],
-
-                "trip_request": None,
-
-                "trip_plan": None,
-
-                # ==================================
-                # TripSubAgent 结果
-                # ==================================
-
-                "subagent_result": None,
-            }
+        print(
+            "\n========================================"
         )
+
+        print(
+            "[ReActAgent] "
+            f"thread_id={thread_id}"
+        )
+
+        print(
+            "[ReActAgent] "
+            f"user_input={user_input}"
+        )
+
+        print(
+            "========================================"
+        )
+
+        initial_state = {
+
+            "messages": [
+                HumanMessage(
+                    content=user_input
+                )
+            ],
+
+            # ======================================
+            # 每一轮都需要重新初始化的运行状态
+            # ======================================
+
+            "iteration": 0,
+
+            "max_iterations": (
+                self.max_iterations
+            ),
+
+            "status": (
+                AgentStatus.RUNNING
+            ),
+
+            "error": None,
+
+            "tool_call_count": 0,
+
+            "tool_result_count": 0,
+
+            "tool_error_count": 0,
+
+            "retry_count": 0,
+
+            "executed_tool_names": [],
+
+            "trip_request": None,
+
+            "trip_plan": None,
+
+            "subagent_result": None,
+        }
+
+        # ==========================================
+        # Checkpointer Config
+        # ==========================================
+
+        config = {
+            "configurable": {
+                "thread_id": thread_id,
+            }
+        }
+
+        # ==========================================
+        # 执行 Graph
+        # ==========================================
+
+        result = await self.graph.ainvoke(
+            initial_state,
+            config=config,
+        )
+
 
         # ==========================================
         # MainAgent 自身失败
         # ==========================================
 
         if (
-            result["status"]
-            == AgentStatus.FAILED
+                result["status"]
+                == AgentStatus.FAILED
         ):
-
             return (
                 "抱歉，任务执行过程中出现了问题："
                 f"{result['error']}"
             )
 
         if (
-            result["status"]
-            == AgentStatus.MAX_ITERATIONS
+                result["status"]
+                == AgentStatus.MAX_ITERATIONS
         ):
-
             return (
                 "抱歉，我尝试了多次操作，"
                 "但仍然没有完成这个任务。"
