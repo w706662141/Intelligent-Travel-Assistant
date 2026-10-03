@@ -1,5 +1,6 @@
 import asyncio
 import random
+import time
 import traceback
 
 from capabilities.tools.manager.executor.error_classifier import ToolErrorClassifier
@@ -46,6 +47,8 @@ class RetryHandler:
                     f"Executing tool={tool_name}, "
                     f"attempt={attempt}"
                 )
+                start = time.perf_counter()
+
                 result = await tool.ainvoke(
                     args
                 )
@@ -55,6 +58,13 @@ class RetryHandler:
                     f"Tool {tool_name} succeeded"
                 )
 
+                elapsed = time.perf_counter() - start
+
+                print(
+                    f"[ToolLatency] "
+                    f"{tool_name} "
+                    f"{elapsed:.2f}s"
+                )
                 return ExecutionResult.success_result(
                     result=result,
                     attempt=attempt,

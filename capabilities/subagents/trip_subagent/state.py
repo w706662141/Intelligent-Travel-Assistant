@@ -1,7 +1,6 @@
 from langgraph.graph import MessagesState
 
 from capabilities.subagents.trip_subagent.schemas.request import TripPlanRequest
-from schemas.trip_plan import TripPlan
 
 
 class TripSubAgentState(MessagesState):

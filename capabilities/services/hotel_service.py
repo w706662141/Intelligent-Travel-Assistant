@@ -1,3 +1,5 @@
+import asyncio
+
 from capabilities.services.geocode_service import GeocodeService
 from schemas.hotel import Hotel
 from infrastructure.amap.gateways.poi import AmapPOIGateway
@@ -28,35 +30,70 @@ class HotelService:
         )
 
         summaries = AmapPOIMapper.summaries(data)
-
         summaries = summaries[:limit]
 
-        result = []
-
-        for poi in summaries:
-
+        async def get_hotel_detail(poi):
             try:
-
-                detail_data = (
-                    await self.poi_gateway.detail(
-                        poi.id
-                    )
+                detail_data = await self.poi_gateway.detail(
+                    poi.id
                 )
 
                 detail = AmapPOIMapper.detail(
                     detail_data
                 )
 
-                hotel = AmapPOIMapper.to_hotel(
+                return AmapPOIMapper.to_hotel(
                     detail
                 )
+            except Exception as e:
+                print(
+                    f"[HotelService] "
+                    f"获取酒店详情失败: "
+                    f"{poi.name}, "
+                    f"error={e}"
+                )
 
-                result.append(hotel)
+                return None
 
-            except Exception:
-                continue
+        hotels = await asyncio.gather(
+            *[
+                get_hotel_detail(poi)
+                for poi in summaries
+            ]
+        )
 
-        return result
+        return [
+            hotel
+            for hotel in hotels
+            if hotel is not None
+        ]
+
+        # result = []
+        #
+        # for poi in summaries:
+        #
+        #     try:
+        #
+        #         detail_data = (
+        #             await self.poi_gateway.detail(
+        #                 poi.id
+        #             )
+        #         )
+        #
+        #         detail = AmapPOIMapper.detail(
+        #             detail_data
+        #         )
+        #
+        #         hotel = AmapPOIMapper.to_hotel(
+        #             detail
+        #         )
+        #
+        #         result.append(hotel)
+        #
+        #     except Exception:
+        #         continue
+        #
+        # return result
 
     async def search_hotel_nearby(
             self,
@@ -76,15 +113,10 @@ class HotelService:
         )
 
         summaries = AmapPOIMapper.summaries(data)
-
         summaries = summaries[:limit]
 
-        result = []
-
-        for poi in summaries:
-
+        async def get_hotel_detail(poi):
             try:
-
                 detail_data = (
                     await self.poi_gateway.detail(
                         poi.id
@@ -95,16 +127,59 @@ class HotelService:
                     detail_data
                 )
 
-                hotel = AmapPOIMapper.to_hotel(
+                return AmapPOIMapper.to_hotel(
                     detail
                 )
+            except Exception as e:
 
-                result.append(hotel)
+                print(
+                    f"[HotelService] "
+                    f"获取附近酒店详情失败: "
+                    f"{poi.name}, "
+                    f"error={e}"
+                )
 
-            except Exception:
-                continue
+                return None
 
-        return result
+        hotels = await asyncio.gather(
+            *[
+                get_hotel_detail(poi)
+                for poi in summaries
+            ]
+        )
+
+        return [
+            hotel
+            for hotel in hotels
+            if hotel is not None
+        ]
+
+        # result = []
+        #
+        # for poi in summaries:
+        #
+        #     try:
+        #
+        #         detail_data = (
+        #             await self.poi_gateway.detail(
+        #                 poi.id
+        #             )
+        #         )
+        #
+        #         detail = AmapPOIMapper.detail(
+        #             detail_data
+        #         )
+        #
+        #         hotel = AmapPOIMapper.to_hotel(
+        #             detail
+        #         )
+        #
+        #         result.append(hotel)
+        #
+        #     except Exception:
+        #         continue
+        #
+        # return result
 
     @staticmethod
     def _location(value):

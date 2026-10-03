@@ -1,3 +1,4 @@
+import asyncio
 from asyncio.log import logger
 
 from schemas.attraction import Attraction
@@ -59,22 +60,44 @@ class AttractionService:
             limit=limit,
         )
 
-        result = []
-
-        for poi in summaries:
+        async def get_detail_safe(poi):
             try:
-
-                attraction = await self.get_detail(
-                    poi.id
-                )
-
-                result.append(attraction)
-
+                return await self.get_detail(poi.id)
             except Exception as e:
-                logger.warning("获取 POI [ID: %s] 详情失败，跳过该景点。原因: %s", poi.id, e)
-                continue
+                logger.warning(
+                    "获取 POI [%s] 详情失败: %s",
+                    poi.id,
+                    e,
+                )
+                return None
 
-        return result
+        result = await asyncio.gather(
+            *[
+                get_detail_safe(poi)
+                for poi in summaries
+            ]
+        )
+
+        return [
+            item
+            for item in result
+            if item is not None
+        ]
+
+        # for poi in summaries:
+        #     try:
+        #
+        #         attraction = await self.get_detail(
+        #             poi.id
+        #         )
+        #
+        #         result.append(attraction)
+        #
+        #     except Exception as e:
+        #         logger.warning("获取 POI [ID: %s] 详情失败，跳过该景点。原因: %s", poi.id, e)
+        #         continue
+
+        # return result
 
     @staticmethod
     def _deduplicate(

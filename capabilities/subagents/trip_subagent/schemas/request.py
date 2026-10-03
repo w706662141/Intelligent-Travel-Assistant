@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class TripPlanRequest(BaseModel):
@@ -45,3 +45,29 @@ class TripPlanRequest(BaseModel):
             "旅行偏好，例如：历史、美食、亲子、自然风景"
         ),
     )
+
+    @field_validator("budget", mode="before")
+    @classmethod
+    def normalize_budget(cls, value):
+
+        if value is None:
+            return None
+
+        if isinstance(value, str):
+
+            value = value.strip()
+
+            if value.lower() in {
+                "none",
+                "null",
+                "",
+                "无",
+                "没有",
+                "不限",
+            }:
+                return None
+
+            if value.isdigit():
+                return int(value)
+
+        return value
