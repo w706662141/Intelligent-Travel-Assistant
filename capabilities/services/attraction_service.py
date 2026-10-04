@@ -1,6 +1,7 @@
 import asyncio
 from asyncio.log import logger
 
+from config.rate_limiter import RateLimiter
 from schemas.attraction import Attraction
 from schemas.poi import POISummary
 
@@ -19,6 +20,8 @@ class AttractionService:
             poi_gateway: AmapPOIGateway
     ):
         self.poi_gateway = poi_gateway
+
+        self.detail_rate_limiter = RateLimiter(interval=0.4)
 
     async def search(
             self,
@@ -43,7 +46,19 @@ class AttractionService:
             poi_id=poi_id
         )
 
+        if not data or "error" in data:
+            raise RuntimeError(
+                f"获取 POI 详情失败: poi_id={poi_id}, error={data.get('error')}"
+            )
+
         detail = AmapPOIMapper.detail(data)
+
+        print("\n========== POI DETAIL OBJECT ==========")
+        print(detail)
+        print("id =", detail.id)
+        print("name =", detail.name)
+        print("location =", detail.location)
+        print("=======================================\n")
 
         return AmapPOIMapper.to_attraction(detail)
 
@@ -62,6 +77,9 @@ class AttractionService:
 
         async def get_detail_safe(poi):
             try:
+                # 控制每次 Detail 请求的启动间隔
+                await self.detail_rate_limiter.acquire()
+
                 return await self.get_detail(poi.id)
             except Exception as e:
                 logger.warning(

@@ -4,7 +4,6 @@ from fastapi import FastAPI, HTTPException, Form
 
 from agent.pipeline import create_pipeline
 from api.schemas.chat_model import (
-    ChatRequest,
     ChatResponse,
     HistoryResponse,
 )

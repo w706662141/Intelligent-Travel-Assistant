@@ -1,6 +1,7 @@
 import asyncio
 
 from capabilities.services.geocode_service import GeocodeService
+from config.rate_limiter import RateLimiter
 from schemas.hotel import Hotel
 from infrastructure.amap.gateways.poi import AmapPOIGateway
 from infrastructure.amap.mappers.poi import AmapPOIMapper
@@ -15,6 +16,7 @@ class HotelService:
     ):
         self.poi_gateway = poi_gateway
         self.geocode_service = geocode_service
+        self.detail_rate_limiter = RateLimiter(interval=0.4)
 
     async def search(
             self,
@@ -34,6 +36,9 @@ class HotelService:
 
         async def get_hotel_detail(poi):
             try:
+
+                await self.detail_rate_limiter.acquire()
+
                 detail_data = await self.poi_gateway.detail(
                     poi.id
                 )
@@ -117,6 +122,8 @@ class HotelService:
 
         async def get_hotel_detail(poi):
             try:
+                await self.detail_rate_limiter.acquire()
+
                 detail_data = (
                     await self.poi_gateway.detail(
                         poi.id

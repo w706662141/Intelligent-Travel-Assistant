@@ -16,7 +16,8 @@ class AmapPOIGateway:
             self,
             keywords: str,
             city: str = "",
-            citylimit: str = 'false', ):
+            citylimit: str = 'false',
+    ):
 
         result = await self.client.call_tool(
             "maps_text_search",
@@ -47,8 +48,10 @@ class AmapPOIGateway:
 
         return AmapResponseParser.parse(result)
 
-    async def detail(self,
-                     poi_id):
+    async def detail(
+            self,
+            poi_id
+        ):
         result = await self.client.call_tool(
             "maps_search_detail",
             {
