@@ -53,13 +53,6 @@ class AttractionService:
 
         detail = AmapPOIMapper.detail(data)
 
-        print("\n========== POI DETAIL OBJECT ==========")
-        print(detail)
-        print("id =", detail.id)
-        print("name =", detail.name)
-        print("location =", detail.location)
-        print("=======================================\n")
-
         return AmapPOIMapper.to_attraction(detail)
 
     async def search_with_details(

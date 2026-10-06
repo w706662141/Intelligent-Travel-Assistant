@@ -147,7 +147,7 @@ async def build_tools_registry():
             + weather_tools
             + meal_tools
     )
-    print('resource_tools:',resource_tools)
+    print('resource_tools:', resource_tools)
 
     # ==========================================
     # Route Tools

@@ -195,11 +195,6 @@ class AmapPOIMapper:
         data: dict[str, Any],
     ) -> POIDetail:
 
-        print("\n========== POI DETAIL RAW DATA ==========")
-        print("type:", type(data))
-        print("data:", data)
-        print("=========================================\n")
-
         if not isinstance(
             data,
             dict,
