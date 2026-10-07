@@ -1,19 +1,30 @@
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
-MEAL_TYPE_OPTIONS = ("breakfast", "lunch", "dinner")
+MEAL_TYPE_OPTIONS = (
+    "breakfast",
+    "lunch",
+    "dinner",
+)
 
 
 class SearchNearbyMealsInput(BaseModel):
     """搜索附近餐厅的输入参数"""
 
+    city: str = Field(
+        ...,
+        description="当前旅行城市，例如'北京'、'上海'",
+    )
     place: str = Field(
         ...,
-        description="景点、地址、商圈名称，例如：故宫、王府井、北京南站",
+        description="必须是之前 Tool 返回的真实地点，例如'故宫博物院'",
     )
     meal_type: str = Field(
         default="lunch",
-        description=f"用餐时段，可选值: {', '.join(MEAL_TYPE_OPTIONS)}",
+        description=(
+            "用餐时段，可选值: "
+            f"{', '.join(MEAL_TYPE_OPTIONS)}"
+        ),
     )
 
 
@@ -22,15 +33,17 @@ def create_meal_tools(
 ):
     @tool(args_schema=SearchNearbyMealsInput)
     async def search_nearby_meals(
+            city: str,
             place: str,
-            meal_type: str = 'lunch'
+            meal_type: str = "lunch",
     ):
         """
-        搜索指定位置附近的餐厅。
+        搜索当前旅行城市中指定真实地点附近的餐厅。
+        place 必须来自之前 Tool 返回的真实地点。
         """
 
         meals = await meal_service.search_nearby(
-            address=place,
+            address=f"{city}{place}",
             meal_type=meal_type,
         )
 
