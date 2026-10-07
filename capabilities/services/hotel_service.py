@@ -109,7 +109,15 @@ class HotelService:
     ) -> list[Hotel]:
 
         location = await self.geocode_service.geocode(address)
-        location_str = str(f'{location.longitude},{location.latitude}')
+
+        if location is None:
+            raise RuntimeError(
+                f"无法解析附近酒店搜索位置: {address}"
+            )
+
+        location_str = (
+            f"{location.longitude},{location.latitude}"
+        )
 
         data = await self.poi_gateway.around_search(
             location=location_str,
