@@ -29,46 +29,33 @@ class TripSubAgentGraph:
 
     def __init__(
         self,
-        model,
+        agent_model,
+        final_model,
         tools,
         max_iterations: int = 15,
         agent_llm_timeout: int = 120,
+        final_llm_timeout: int = 60,
     ):
-        # ==================================================
-        # Agent
-        # ==================================================
-
         self.trip_agent_nodes = TripAgentNodes(
-            model=model,
+            model=agent_model,
             max_iterations=max_iterations,
             llm_timeout=agent_llm_timeout,
         )
-
-        # ==================================================
-        # Tools
-        # ==================================================
 
         self.trip_tool_nodes = TripToolNodes(
             tools=tools,
         )
 
-        # ==================================================
-        # Finalizer
-        #
-        # 不需要 model
-        # ==================================================
-
-        self.finalizer_node = TripFinalizerNode()
+        self.finalizer_node = TripFinalizerNode(
+            model=final_model,
+            llm_timeout=final_llm_timeout,
+        )
 
     def build(self):
 
         graph = StateGraph(
             TripSubAgentState
         )
-
-        # ==================================================
-        # Nodes
-        # ==================================================
 
         graph.add_node(
             "agent",
@@ -85,18 +72,10 @@ class TripSubAgentGraph:
             self.finalizer_node.finalize,
         )
 
-        # ==================================================
-        # START
-        # ==================================================
-
         graph.add_edge(
             START,
             "agent",
         )
-
-        # ==================================================
-        # Agent Router
-        # ==================================================
 
         graph.add_conditional_edges(
             "agent",
@@ -108,18 +87,10 @@ class TripSubAgentGraph:
             },
         )
 
-        # ==================================================
-        # Tool → Agent
-        # ==================================================
-
         graph.add_edge(
             "tools",
             "agent",
         )
-
-        # ==================================================
-        # Finalizer → END
-        # ==================================================
 
         graph.add_edge(
             "finalizer",
