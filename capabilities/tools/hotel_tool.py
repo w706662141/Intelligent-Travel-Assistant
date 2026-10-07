@@ -5,7 +5,10 @@ from pydantic import BaseModel, Field
 class SearchHotelsInput(BaseModel):
     """搜索酒店的输入参数"""
 
-    city: str = Field(..., description="城市名称，例如'北京'、'上海'")
+    city: str = Field(
+        ...,
+        description="城市名称，例如'北京'、'上海'",
+    )
     limit: int = Field(
         default=5,
         ge=1,
@@ -17,7 +20,14 @@ class SearchHotelsInput(BaseModel):
 class SearchNearbyHotelsInput(BaseModel):
     """搜索附近酒店的输入参数"""
 
-    place: str = Field(..., description="景点、地址、商圈名称，例如'故宫'、'龙门石窟'")
+    city: str = Field(
+        ...,
+        description="当前旅行城市，例如'北京'、'上海'",
+    )
+    place: str = Field(
+        ...,
+        description="必须是之前景点 Tool 返回的真实地点，例如'故宫博物院'",
+    )
     limit: int = Field(
         default=5,
         ge=1,
@@ -36,15 +46,6 @@ def create_hotel_tools(
     ):
         """
         查询指定城市范围内的酒店列表。
-
-        适用于:
-        - 北京有哪些酒店
-        - 上海酒店推荐
-        - 某城市住宿选择
-
-        不适用于:
-        - 某景点附近酒店
-        - 某地址附近酒店
         """
 
         hotels = await hotel_service.search(
@@ -59,18 +60,21 @@ def create_hotel_tools(
 
     @tool(args_schema=SearchNearbyHotelsInput)
     async def search_hotels_near_place(
+            city: str,
             place: str,
             limit: int = 5,
     ):
         """
-        搜索指定地区附近的的酒店列表。
+        搜索当前旅行城市中指定真实地点附近的酒店。
+        place 必须来自之前景点搜索结果。
         """
 
         hotels = await hotel_service.search_hotel_nearby(
-            address=place,
-            radius='1000',
+            address=f"{city}{place}",
+            radius="1000",
             keyword="酒店",
-            limit=limit)
+            limit=limit,
+        )
 
         return [
             hotel.model_dump()
