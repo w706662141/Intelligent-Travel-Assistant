@@ -10,13 +10,14 @@ class SearchHotelsInput(BaseModel):
         default=5,
         ge=1,
         le=10,
-        description="返回结果数量上限，默认为5",
+        description="返回结果数量上限,建议不超过10，默认为5",
     )
 
 
 class SearchNearbyHotelsInput(BaseModel):
     """搜索附近酒店的输入参数"""
-
+    city: str = Field(
+        ..., description=("当前旅行城市，例如'北京'、'上海'"), )
     place: str = Field(..., description="景点、地址、商圈名称，例如'故宫'、'龙门石窟'")
     limit: int = Field(
         default=5,
@@ -59,6 +60,7 @@ def create_hotel_tools(
 
     @tool(args_schema=SearchNearbyHotelsInput)
     async def search_hotels_near_place(
+            city: str,
             place: str,
             limit: int = 5,
     ):
@@ -66,11 +68,14 @@ def create_hotel_tools(
         搜索指定地区附近的的酒店列表。
         """
 
-        hotels = await hotel_service.search_hotel_nearby(
-            address=place,
-            radius='1000',
-            keyword="酒店",
-            limit=limit)
+        hotels = (
+            await hotel_service.search_hotel_nearby(
+                address=f"{city}{place}",
+                radius="1000",
+                keyword="酒店",
+                limit=limit,
+            )
+        )
 
         return [
             hotel.model_dump()
