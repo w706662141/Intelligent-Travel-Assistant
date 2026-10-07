@@ -12,27 +12,43 @@ from infrastructure.amap.mappers.poi import (
 class MealService:
 
     def __init__(
-            self,
-            poi_gateway: AmapPOIGateway,
-            geocode_service: GeocodeService,
+        self,
+        poi_gateway: AmapPOIGateway,
+        geocode_service: GeocodeService,
     ):
         self.poi_gateway = poi_gateway
         self.geocode_service = geocode_service
 
-    async def search_nearby(self,
-                            address: str,
-                            meal_type: str,
-                            radius: str = '1000',
-                            limit: int = 5) -> list[Meal]:
+    async def search_nearby(
+        self,
+        address: str,
+        meal_type: str,
+        radius: str = "1000",
+        limit: int = 5,
+    ) -> list[Meal]:
 
-        location = await self.geocode_service.geocode(address)
-        location_str = str(f'{location.longitude},{location.latitude}')
-        print('location_str',location_str)
+        location = await self.geocode_service.geocode(
+            address
+        )
+
+        if location is None:
+            raise RuntimeError(
+                f"无法解析餐饮搜索位置: {address}"
+            )
+
+        location_str = (
+            f"{location.longitude},{location.latitude}"
+        )
+
+        print(
+            "[MealService] "
+            f"geocoded={address} -> {location_str}"
+        )
 
         data = await self.poi_gateway.around_search(
             location=location_str,
             radius=radius,
-            keywords='餐厅'
+            keywords="餐厅",
         )
 
         summaries = AmapPOIMapper.summaries(data)
