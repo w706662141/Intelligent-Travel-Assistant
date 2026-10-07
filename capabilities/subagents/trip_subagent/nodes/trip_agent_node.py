@@ -1,21 +1,21 @@
 import asyncio
-import traceback
 import json
+import traceback
+from collections import OrderedDict
 
-from langchain_core.messages import (
-    HumanMessage,
-)
+from langchain_core.messages import HumanMessage
 
 from capabilities.subagents.trip_subagent.state import (
     TripSubAgentState,
 )
-
 from capabilities.subagents.trip_subagent.prompts.prompt import (
     TRIP_SUBAGENT_SYSTEM_PROMPT,
 )
 
 
 class TripAgentNodes:
+
+    MAX_ITEMS_PER_SECTION = 6
 
     def __init__(
         self,
@@ -27,354 +27,327 @@ class TripAgentNodes:
         self.max_iterations = max_iterations
         self.llm_timeout = llm_timeout
 
-    # ==========================================================
-    # 构建精简资源上下文
-    # ==========================================================
-
     @staticmethod
-    def _build_resource_context(
-        resource_data: list[dict],
+    def _request_context(
+        request,
     ) -> str:
-
-        if not resource_data:
-            return "目前还没有获取到任何旅行资源。"
-
-        sections = []
-
-        for index, item in enumerate(
-            resource_data,
-            start=1,
-        ):
-
-            tool_name = item.get(
-                "tool",
-                "unknown",
-            )
-
-            args = item.get(
-                "args",
-                {},
-            )
-
-            result = item.get(
-                "result",
-            )
-
-            # --------------------------------------------------
-            # 不把完整 result 原样发送给 LLM
-            # --------------------------------------------------
-
-            compact_result = (
-                TripAgentNodes._compact_result(
-                    tool_name=tool_name,
-                    result=result,
-                )
-            )
-
-            section = (
-                f"【资源 {index}】\n"
-                f"来源 Tool：{tool_name}\n"
-                f"调用参数：{args}\n"
-                f"结果：\n"
-                f"{compact_result}"
-            )
-
-            sections.append(section)
-
-        return "\n\n".join(sections)
-
-    # ==========================================================
-    # 精简 Tool 返回结果
-    # ==========================================================
+        return (
+            f"城市：{request.city}\n"
+            f"日期：{request.start_date} ~ {request.end_date}\n"
+            f"人数：{request.travelers}\n"
+            f"预算："
+            f"{request.budget if request.budget is not None else '未指定'}\n"
+            f"偏好："
+            f"{', '.join(request.preferences) if request.preferences else '未指定'}"
+        )
 
     @staticmethod
-    def _compact_result(
-        tool_name: str,
-        result,
-    ) -> str:
+    def _safe_str(value) -> str:
+        if value is None:
+            return ""
+        return str(value).strip()
 
-        if result is None:
-            return "无结果"
+    @classmethod
+    def _item_key(
+        cls,
+        item: dict,
+    ) -> tuple:
+        name = cls._safe_str(item.get("name"))
+        address = cls._safe_str(item.get("address"))
+        poi_id = cls._safe_str(
+            item.get("poi_id")
+            or item.get("id")
+        )
+        return (
+            name,
+            address,
+            poi_id,
+        )
 
-        # --------------------------------------------------
-        # List
-        # --------------------------------------------------
-
-        if isinstance(result, list):
-
-            compact_items = []
-
-            for item in result:
-
-                if isinstance(item, dict):
-
-                    compact_item = (
-                        TripAgentNodes._compact_item(
-                            tool_name,
-                            item,
-                        )
-                    )
-
-                    compact_items.append(
-                        compact_item
-                    )
-
-                else:
-
-                    compact_items.append(
-                        str(item)
-                    )
-
-            return json.dumps(
-                compact_items,
-                ensure_ascii=False,
-                indent=2,
-            )
-
-        # --------------------------------------------------
-        # Dict
-        # --------------------------------------------------
-
-        if isinstance(result, dict):
-
-            compact_item = (
-                TripAgentNodes._compact_item(
-                    tool_name,
-                    result,
-                )
-            )
-
-            return json.dumps(
-                compact_item,
-                ensure_ascii=False,
-                indent=2,
-            )
-
-        # --------------------------------------------------
-        # 其他类型
-        # --------------------------------------------------
-
-        return str(result)
-
-    # ==========================================================
-    # 精简单个资源
-    # ==========================================================
-
-    @staticmethod
+    @classmethod
     def _compact_item(
+        cls,
         tool_name: str,
         item: dict,
     ) -> dict:
-
-        # --------------------------------------------------
-        # 景点
-        # --------------------------------------------------
+        if not isinstance(item, dict):
+            return {"value": cls._safe_str(item)}
 
         if tool_name == "search_attraction":
+            keys = (
+                "name",
+                "address",
+                "rating",
+                "ticket_price",
+                "opening_hours",
+                "category",
+            )
 
-            return {
-                key: item[key]
-                for key in (
-                    "name",
-                    "address",
-                    "location",
-                    "poi_id",
-                    "type",
-                )
-                if key in item
-            }
-
-        # --------------------------------------------------
-        # 酒店
-        # --------------------------------------------------
-
-        if tool_name in {
+        elif tool_name in {
             "search_hotels",
             "search_hotels_near_place",
         }:
+            keys = (
+                "name",
+                "address",
+                "rating",
+                "cost",
+                "type",
+            )
 
-            return {
-                key: item[key]
-                for key in (
-                    "name",
-                    "address",
-                    "location",
-                    "poi_id",
-                    "tel",
-                    "rating",
-                    "cost",
-                )
-                if key in item
-            }
+        elif tool_name == "search_nearby_meals":
+            keys = (
+                "name",
+                "address",
+                "type",
+                "estimated_cost",
+            )
 
-        # --------------------------------------------------
-        # 餐厅
-        # --------------------------------------------------
+        elif tool_name == "query_weather":
+            keys = (
+                "date",
+                "day_weather",
+                "night_weather",
+                "day_temp",
+                "night_temp",
+                "wind_direction",
+                "wind_power",
+            )
 
-        if tool_name == "search_nearby_meals":
-
-            return {
-                key: item[key]
-                for key in (
-                    "name",
-                    "address",
-                    "location",
-                    "poi_id",
-                    "tel",
-                    "rating",
-                    "cost",
-                    "type",
-                )
-                if key in item
-            }
-
-        # --------------------------------------------------
-        # 天气
-        # --------------------------------------------------
-
-        if tool_name == "query_weather":
-
-            return {
-                key: item[key]
-                for key in item
-                if key in {
-                    "city",
-                    "date",
-                    "week",
-                    "weather",
-                    "temperature",
-                    "winddirection",
-                    "windpower",
-                }
-            }
-
-        # --------------------------------------------------
-        # 未知 Tool
-        #
-        # 不建议直接返回完整对象。
-        # 只保留常见字段。
-        # --------------------------------------------------
-
-        common_fields = {
-            "name",
-            "address",
-            "location",
-            "poi_id",
-            "rating",
-            "cost",
-            "type",
-            "date",
-            "weather",
-            "temperature",
-        }
+        else:
+            keys = (
+                "name",
+                "address",
+                "rating",
+                "cost",
+                "type",
+                "date",
+            )
 
         return {
-            key: value
-            for key, value in item.items()
-            if key in common_fields
+            key: item[key]
+            for key in keys
+            if key in item
+            and item[key] not in (None, "", [], {})
         }
 
-    # ==========================================================
-    # 构建本轮 LLM Context
-    # ==========================================================
+    @classmethod
+    def _normalize_result(
+        cls,
+        tool_name: str,
+        result,
+    ) -> list[dict]:
+        if result is None:
+            return []
 
-    @staticmethod
+        if isinstance(result, dict):
+            result = [result]
+
+        if not isinstance(result, list):
+            return [{"value": cls._safe_str(result)}]
+
+        output = []
+        seen = set()
+
+        for raw in result:
+            if not isinstance(raw, dict):
+                continue
+
+            item = cls._compact_item(
+                tool_name,
+                raw,
+            )
+
+            key = cls._item_key(raw)
+
+            # 天气用日期去重。
+            if tool_name == "query_weather":
+                key = (
+                    cls._safe_str(raw.get("date")),
+                )
+
+            if key in seen:
+                continue
+
+            seen.add(key)
+
+            if item:
+                output.append(item)
+
+        return output
+
+    @classmethod
+    def _build_resource_context(
+        cls,
+        resource_data: list[dict],
+        request=None,
+    ) -> str:
+        if not resource_data:
+            return "暂无已获取资源。"
+
+        grouped = OrderedDict(
+            (
+                ("attractions", []),
+                ("hotels", []),
+                ("meals", []),
+                ("weather", []),
+                ("other", []),
+            )
+        )
+
+        seen = {
+            section: set()
+            for section in grouped
+        }
+
+        for resource in resource_data:
+            tool_name = resource.get("tool", "")
+            result = resource.get("result")
+
+            if tool_name == "search_attraction":
+                section = "attractions"
+            elif tool_name in {
+                "search_hotels",
+                "search_hotels_near_place",
+            }:
+                section = "hotels"
+            elif tool_name == "search_nearby_meals":
+                section = "meals"
+            elif tool_name == "query_weather":
+                section = "weather"
+            else:
+                section = "other"
+
+            for item in cls._normalize_result(
+                tool_name,
+                result,
+            ):
+                if section == "weather":
+                    key = cls._safe_str(item.get("date"))
+                else:
+                    key = (
+                        cls._safe_str(item.get("name")),
+                        cls._safe_str(item.get("address")),
+                    )
+
+                if key in seen[section]:
+                    continue
+
+                seen[section].add(key)
+                grouped[section].append(item)
+
+        # 天气只允许进入目标旅行日期。
+        # 如果 API 返回的天气没有覆盖目标日期，
+        # 明确告诉 Agent「没有有效天气」，避免反复搜索。
+        if request is not None:
+            start_date = cls._safe_str(request.start_date)
+            end_date = cls._safe_str(request.end_date)
+
+            weather_items = grouped["weather"]
+            valid_weather = [
+                item
+                for item in weather_items
+                if start_date <= cls._safe_str(item.get("date")) <= end_date
+            ]
+
+            grouped["weather"] = valid_weather
+
+        labels = {
+            "attractions": "景点",
+            "hotels": "酒店",
+            "meals": "餐饮",
+            "weather": "天气",
+            "other": "其他资源",
+        }
+
+        sections = []
+
+        for section, label in labels.items():
+            items = grouped[section]
+
+            if section == "weather" and not items:
+                if request is not None:
+                    sections.append(
+                        f"【{label}】\n"
+                        f"暂无覆盖 {request.start_date} ~ "
+                        f"{request.end_date} 的有效天气数据。"
+                    )
+                continue
+
+            if not items:
+                continue
+
+            items = items[: cls.MAX_ITEMS_PER_SECTION]
+
+            lines = [
+                f"【{label}】"
+            ]
+
+            for index, item in enumerate(
+                items,
+                start=1,
+            ):
+                parts = []
+
+                for key, value in item.items():
+                    parts.append(
+                        f"{key}={value}"
+                    )
+
+                lines.append(
+                    f"{index}. "
+                    + "；".join(parts)
+                )
+
+            sections.append(
+                "\n".join(lines)
+            )
+
+        return "\n\n".join(sections)
+
+    @classmethod
     def _build_llm_messages(
+        cls,
         state: TripSubAgentState,
     ):
+        request = state["request"]
 
-        # --------------------------------------------------
-        # 原始用户请求
-        #
-        # 从最初 HumanMessage 中获取。
-        # --------------------------------------------------
-
-        original_messages = state.get(
-            "messages",
-            []
+        resource_context = cls._build_resource_context(
+            resource_data=state.get(
+                "resource_data",
+                [],
+            ),
+            request=request,
         )
-
-        user_message = None
-
-        for message in original_messages:
-
-            if isinstance(
-                message,
-                HumanMessage,
-            ):
-                user_message = message
-                break
-
-        if user_message is None:
-            user_content = "当前没有获取到用户请求。"
-        else:
-            user_content = str(
-                user_message.content
-            )
-
-        # --------------------------------------------------
-        # resource_data
-        # --------------------------------------------------
-
-        resource_data = state.get(
-            "resource_data",
-            []
-        )
-
-        resource_context = (
-            TripAgentNodes._build_resource_context(
-                resource_data
-            )
-        )
-
-        # --------------------------------------------------
-        # 每次重新构建一个干净的 HumanMessage
-        #
-        # 不再把完整 messages 历史发送给 LLM。
-        # --------------------------------------------------
 
         context = (
-            "【用户原始旅行请求】\n"
-            f"{user_content}\n\n"
-            "【已经获取的真实旅行资源】\n"
+            "【旅行需求】\n"
+            f"{cls._request_context(request)}\n\n"
+            "【已获得资源】\n"
             f"{resource_context}\n\n"
-            "【当前任务】\n"
-            "根据用户需求和已经获取的真实资源，"
-            "判断是否还需要调用 Tool。\n"
-            "如果需要，继续调用必要的 Tool。\n"
-            "如果信息已经足够，停止 Tool Calling，"
-            "直接生成最终旅行规划回答。\n"
-            "不得编造 Tool 未返回的实时信息。"
+            "【当前决策】\n"
+            "判断是否还需要 Tool。\n"
+            "需要则调用必要的 Tool；"
+            "不需要则停止 Tool Calling。\n"
+            "不要重复搜索已经足够的资源。"
         )
 
         return [
-            # --------------------------------------------------
-            # 注意：
-            # System Prompt 仍然保留。
-            # --------------------------------------------------
             {
                 "role": "system",
                 "content": TRIP_SUBAGENT_SYSTEM_PROMPT,
             },
-
             {
                 "role": "user",
                 "content": context,
             },
         ]
 
-    # ==========================================================
-    # Agent Node
-    # ==========================================================
-
     async def agent_node(
         self,
         state: TripSubAgentState,
     ):
-
-        iteration = (
-            state["iteration"] + 1
-        )
+        iteration = state["iteration"] + 1
 
         print(
             f"\n========== "
@@ -383,56 +356,27 @@ class TripAgentNodes:
         )
 
         if iteration > state["max_iterations"]:
-
             return {
                 "iteration": iteration,
                 "status": "max_iterations",
-                "error": (
-                    "TripSubAgent max iterations reached"
-                ),
+                "error": "TripSubAgent max iterations reached",
             }
 
-        # ======================================================
-        # 关键修改
-        #
-        # 不再：
-        #
-        # messages = state["messages"]
-        #
-        # 而是：
-        #
-        # 根据 resource_data 重新构造精简 Context。
-        # ======================================================
+        llm_messages = self._build_llm_messages(state)
 
-        llm_messages = (
-            self._build_llm_messages(
-                state
-            )
+        resource_count = len(
+            state.get("resource_data", [])
         )
 
         print(
-            f"[TripSubAgent] "
-            f"Iteration={iteration}"
-        )
-
-        print(
-            f"[TripSubAgent] "
-            f"resource_count="
-            f"{len(state.get('resource_data', []))}"
-        )
-
-        print(
-            f"[TripSubAgent] "
-            f"LLM message count="
-            f"{len(llm_messages)}"
+            f"[TripSubAgent] iteration={iteration}, "
+            f"resource_count={resource_count}, "
+            f"llm_message_count={len(llm_messages)}"
         )
 
         try:
-
             response = await asyncio.wait_for(
-                self.model.ainvoke(
-                    llm_messages
-                ),
+                self.model.ainvoke(llm_messages),
                 timeout=self.llm_timeout,
             )
 
@@ -445,44 +389,22 @@ class TripAgentNodes:
             print(
                 "\n[TripSubAgent] LLM Response:"
             )
-
             print(response)
 
             if tool_calls:
-
-                print(
-                    "\n[TripSubAgent] Tool Calls:"
-                )
-
+                print("\n[TripSubAgent] Tool Calls:")
                 for call in tool_calls:
                     print(call)
-
             else:
-
                 print(
                     "\n[TripSubAgent] "
-                    "No more tool calls."
+                    "No more tool calls. "
+                    "Handing off to Final LLM."
                 )
-
-                print(
-                    "[TripSubAgent] "
-                    "This AIMessage is the final response."
-                )
-
-            # --------------------------------------------------
-            # 这里仍然把 AIMessage 放回 messages。
-            #
-            # ToolNode 需要最后一个 AIMessage 中的
-            # tool_calls 来执行 Tool。
-            #
-            # 但是下一轮 Agent 不再使用完整 messages。
-            # --------------------------------------------------
 
             return {
                 "messages": [response],
-
                 "iteration": iteration,
-
                 "tool_call_count": (
                     state["tool_call_count"]
                     + len(tool_calls)
@@ -490,7 +412,6 @@ class TripAgentNodes:
             }
 
         except asyncio.TimeoutError:
-
             print(
                 "\n========== "
                 "TripSubAgent LLM TIMEOUT "
@@ -499,9 +420,7 @@ class TripAgentNodes:
 
             return {
                 "iteration": iteration,
-
                 "status": "failed",
-
                 "error": (
                     "TripSubAgent LLM timeout: "
                     f"no response within "
@@ -510,20 +429,16 @@ class TripAgentNodes:
             }
 
         except Exception as exc:
-
             print(
                 "\n========== "
                 "TripSubAgent LLM ERROR "
                 "=========="
             )
-
             traceback.print_exc()
 
             return {
                 "iteration": iteration,
-
                 "status": "failed",
-
                 "error": (
                     "TripSubAgent LLM execution failed: "
                     f"{exc}"
